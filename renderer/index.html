@@ -246,6 +246,18 @@
       <div class="routing">
         <div class="routing-form">
 
+          <div class="field" id="field-virtual-mic">
+            <label>Microfono virtuale</label>
+            <p class="route-hint vm-status" id="vm-status">Ricerca in corso…</p>
+            <div class="vm-progress" id="vm-progress" style="display:none">
+              <div class="vm-track"><div class="vm-fill" id="vm-fill"></div></div>
+              <span class="vm-label route-hint" id="vm-label"></span>
+            </div>
+            <button class="btn-aurora" id="btn-install-vbcable" type="button" style="display:none; margin-top:8px;">
+              Installa VB-Cable (microfono virtuale)
+            </button>
+          </div>
+
           <div class="field">
             <label for="select-input-device">Microfono da usare nelle app</label>
             <select id="select-input-device">

@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Wire the auto-updater UI
   initUpdater();
 
+  // Detect/install virtual mic (VB-Cable)
+  initVirtualMic();
+
   // Resume microphone effect chain if it was left enabled
   if (settings.micEffect && settings.micEffect.enabled) {
     startMicEffect();
@@ -1565,8 +1568,79 @@ async function initUpdater() {
           window.electronAPI.installUpdate();
         }
         break;
+      case 'error': {
+        const raw = p.message || '';
+        let friendly;
+        if (raw.includes('404'))        friendly = 'Nessuna release trovata su GitHub. Esegui npm run release per pubblicare la prima versione.';
+        else if (raw.includes('ENOENT') || raw.includes('latest.yml')) friendly = 'File di aggiornamento non trovato. Pubblica una release con npm run release.';
+        else if (raw.includes('ENOTFOUND') || raw.includes('ECONNREFUSED')) friendly = 'Nessuna connessione a internet.';
+        else friendly = 'Errore controllo aggiornamenti.';
+        if (statusEl) statusEl.textContent = friendly;
+        break;
+      }
+    }
+  });
+}
+
+/* ===== Virtual Microphone (VB-Cable) ===================================== */
+
+const VBCABLE_REGEX = /\b(cable|vb-?audio|vb-?cable|voicemeeter)\b/i;
+
+async function initVirtualMic() {
+  const statusEl  = document.getElementById('vm-status');
+  const installBtn = document.getElementById('btn-install-vbcable');
+
+  // Detect whether a virtual audio device is already present
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const found = devices.some(d => VBCABLE_REGEX.test(d.label));
+    if (found) {
+      if (statusEl) statusEl.textContent = '✓ Microfono virtuale (VB-Cable) già installato.';
+      if (installBtn) installBtn.style.display = 'none';
+    } else {
+      if (statusEl) statusEl.textContent = 'Nessun microfono virtuale rilevato. Installa VB-Cable per usare la tua voce filtrata in Discord, Teams, ecc.';
+      if (installBtn) installBtn.style.display = '';
+    }
+  } catch {
+    if (statusEl) statusEl.textContent = 'Impossibile rilevare i dispositivi audio.';
+  }
+
+  // Wire install button
+  installBtn?.addEventListener('click', async () => {
+    installBtn.disabled = true;
+    await window.electronAPI.installVbCable();
+  });
+
+  // Handle progress events from main process
+  window.electronAPI.onVbCableProgress((p) => {
+    const progressEl = document.getElementById('vm-progress');
+    const fillEl     = document.getElementById('vm-fill');
+    const labelEl    = document.getElementById('vm-label');
+
+    switch (p.state) {
+      case 'downloading':
+        if (statusEl)   statusEl.textContent = 'Download VB-Cable in corso…';
+        if (progressEl) progressEl.style.display = '';
+        if (fillEl)     fillEl.style.width = `${p.percent}%`;
+        if (labelEl)    labelEl.textContent = `${p.percent}%`;
+        break;
+      case 'extracting':
+        if (fillEl)  fillEl.style.width = '100%';
+        if (labelEl) labelEl.textContent = 'Estrazione…';
+        break;
+      case 'installing':
+        if (labelEl) labelEl.textContent = 'Installazione (conferma la richiesta admin)…';
+        break;
+      case 'done':
+        if (progressEl) progressEl.style.display = 'none';
+        if (statusEl)   statusEl.textContent = '✓ VB-Cable installato! Riavvia la soundboard per vederlo nei dispositivi.';
+        if (installBtn) installBtn.style.display = 'none';
+        showNotification('VB-Cable installato con successo! Riavvia la soundboard per usarlo.');
+        break;
       case 'error':
-        if (statusEl) statusEl.textContent = 'Errore aggiornamento: ' + (p.message || 'sconosciuto');
+        if (progressEl) progressEl.style.display = 'none';
+        if (statusEl)   statusEl.textContent = 'Errore: ' + (p.message || 'installazione fallita');
+        if (installBtn) { installBtn.disabled = false; installBtn.style.display = ''; }
         break;
     }
   });

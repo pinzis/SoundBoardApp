@@ -10,6 +10,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   unregisterShortcut: (soundId) => ipcRenderer.invoke('unregister-shortcut', { soundId }),
   unregisterAllShortcuts: () => ipcRenderer.invoke('unregister-all-shortcuts'),
 
+  // Virtual microphone (VB-Cable)
+  installVbCable: () => ipcRenderer.invoke('install-vbcable'),
+  onVbCableProgress: (callback) => {
+    const subscription = (event, payload) => callback(payload);
+    ipcRenderer.on('vbcable-progress', subscription);
+    return () => ipcRenderer.removeListener('vbcable-progress', subscription);
+  },
+
   // Auto-update
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

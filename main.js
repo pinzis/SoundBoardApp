@@ -1,6 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut, protocol, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const https = require('https');
+const http = require('http');
+const { spawn } = require('child_process');
 const { pathToFileURL } = require('url');
 const { autoUpdater } = require('electron-updater');
 
@@ -259,4 +263,127 @@ ipcMain.handle('unregister-all-shortcuts', () => {
   globalShortcut.unregisterAll();
   registeredShortcuts.clear();
   return true;
+});
+
+// ---- Virtual Microphone (VB-Cable) installation ----------------------------------------
+
+const VBCABLE_URL = 'https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack43.zip';
+const VBCABLE_EXE = 'VBCABLE_Setup_x64.exe';
+
+function sendVbCableProgress(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('vbcable-progress', payload);
+  }
+}
+
+function downloadFile(url, destPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destPath);
+    let received = 0;
+
+    function follow(currentUrl) {
+      const mod = currentUrl.startsWith('https') ? https : http;
+      mod.get(currentUrl, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const next = new URL(res.headers.location, currentUrl).toString();
+          res.resume();
+          follow(next);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          file.close();
+          reject(new Error(`HTTP ${res.statusCode}`));
+          return;
+        }
+        const total = parseInt(res.headers['content-length'] || '0', 10);
+        res.on('data', (chunk) => {
+          received += chunk.length;
+          if (total > 0 && onProgress) onProgress(Math.round(received / total * 100));
+        });
+        res.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+        res.on('error', (e) => { file.close(); reject(e); });
+      }).on('error', (e) => { file.close(); reject(e); });
+    }
+
+    follow(url);
+  });
+}
+
+function extractZip(zipPath, destDir) {
+  return new Promise((resolve, reject) => {
+    const zip = zipPath.replace(/'/g, "''");
+    const dir = destDir.replace(/'/g, "''");
+    const ps = spawn('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${dir}' -Force`
+    ], { windowsHide: true });
+    let stderr = '';
+    ps.stderr.on('data', (d) => { stderr += d.toString(); });
+    ps.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Estrazione fallita (${code}): ${stderr.trim()}`));
+    });
+    ps.on('error', reject);
+  });
+}
+
+function runElevated(exePath, args) {
+  return new Promise((resolve, reject) => {
+    const exe = exePath.replace(/'/g, "''");
+    const argsStr = args.length ? args.map(a => `'${a.replace(/'/g, "''")}'`).join(', ') : "'/S'";
+    const cmd = [
+      `$ErrorActionPreference = 'Stop'`,
+      `$p = Start-Process -FilePath '${exe}' -ArgumentList ${argsStr} -Verb RunAs -PassThru -Wait`,
+      `exit $p.ExitCode`
+    ].join('; ');
+    const ps = spawn('powershell.exe', ['-NoProfile', '-Command', cmd], { windowsHide: false });
+    let stderr = '';
+    ps.stderr.on('data', (d) => { stderr += d.toString(); });
+    ps.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(
+        code === 1
+          ? 'Installazione annullata o accesso amministratore negato'
+          : `Installazione fallita (codice: ${code})`
+      ));
+    });
+    ps.on('error', reject);
+  });
+}
+
+ipcMain.handle('install-vbcable', async () => {
+  try {
+    const tmpDir = path.join(os.tmpdir(), 'soundboard-vbcable');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+    const zipPath = path.join(tmpDir, 'vbcable.zip');
+    const extractDir = path.join(tmpDir, 'extracted');
+
+    // Download (~5 MB)
+    sendVbCableProgress({ state: 'downloading', percent: 0 });
+    await downloadFile(VBCABLE_URL, zipPath, (p) => {
+      sendVbCableProgress({ state: 'downloading', percent: p });
+    });
+
+    // Extract
+    sendVbCableProgress({ state: 'extracting' });
+    if (fs.existsSync(extractDir)) fs.rmSync(extractDir, { recursive: true, force: true });
+    await extractZip(zipPath, extractDir);
+
+    const exePath = path.join(extractDir, VBCABLE_EXE);
+    if (!fs.existsSync(exePath)) {
+      throw new Error('Installer non trovato nel pacchetto scaricato');
+    }
+
+    // Install with UAC elevation
+    sendVbCableProgress({ state: 'installing' });
+    await runElevated(exePath, ['/S']);
+
+    sendVbCableProgress({ state: 'done' });
+    return { ok: true };
+  } catch (err) {
+    const msg = err?.message || String(err);
+    sendVbCableProgress({ state: 'error', message: msg });
+    return { ok: false, error: msg };
+  }
 });
