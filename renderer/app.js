@@ -12,7 +12,8 @@ let settings = {
   monitorVolume: 70,
   fadeDuration: 100,
   categories: null, // [{ id, name, color }] — seeded on first load
-  micEffect: { enabled: false, type: 'none', intensity: 0.5, selfMonitor: false }
+  micEffect: { enabled: false, type: 'none', intensity: 0.5, selfMonitor: false },
+  language: null   // null = not yet chosen (shows language picker on first launch)
 };
 
 // Palette available for categories / sound colors
@@ -29,6 +30,502 @@ function colorToken(id) {
   return c ? c.token : 'var(--aurora-violet)';
 }
 
+/* ===== i18n =============================================================== */
+
+let currentLang = 'it';
+
+const STRINGS = {
+  it: {
+    'brand-sub': 'Studio · Live',
+    'categories': 'Categorie',
+    'btn-add-sound': 'Nuovo suono',
+    'btn-add-category': '',
+    'all-sounds': 'Tutti i suoni',
+    'eyebrow-active-cat': 'Categoria attiva',
+    'sounds-count': (n) => `${n} ${n === 1 ? 'suono caricato' : 'suoni caricati'}`,
+    'empty-title': 'Ancora nessun suono',
+    'empty-sub': 'Aggiungi il tuo primo suono per riempire la board.',
+    'btn-empty-add': 'Aggiungi un suono',
+    'btn-stop-all': 'Ferma tutto',
+    'live-text': 'In ascolto',
+    'search-ph': 'Cerca suono…',
+    // Sound modal
+    'sound-modal-new': 'Nuovo suono',
+    'sound-modal-edit': 'Modifica Suono',
+    'label-sound-title': 'Nome del suono',
+    'ph-sound-title': 'Es. Applausi, Tamburo, Risata',
+    'label-file': 'File audio o video',
+    'dropzone-hint': 'Trascina il file qui o',
+    'dropzone-browse': 'sfoglia',
+    'no-file': 'Nessun file selezionato',
+    'label-category': 'Categoria',
+    'label-color': 'Colore',
+    'label-volume': 'Volume',
+    'label-hotkey': 'Scorciatoia globale',
+    'btn-record': 'Registra',
+    'btn-recording': 'Rilascia i tasti...',
+    'hotkey-none': 'Nessuna',
+    'hotkey-press': 'Premi i tasti...',
+    'btn-cancel': 'Annulla',
+    'btn-save-sound': 'Salva suono',
+    'btn-saving': 'Salvataggio...',
+    // Colors
+    'color-purple': 'Viola', 'color-magenta': 'Magenta', 'color-cyan': 'Ciano',
+    'color-green': 'Menta', 'color-yellow': 'Oro',
+    // Settings modal
+    'settings-title': 'Routing audio',
+    'label-virtual-mic': 'Microfono virtuale',
+    'vm-searching': 'Ricerca in corso…',
+    'vm-found': '✓ Microfono virtuale (VB-Cable) già installato.',
+    'vm-not-found': 'Nessun microfono virtuale rilevato. Installa VB-Cable per usare la tua voce filtrata in Discord, Teams, ecc.',
+    'btn-install-vbcable': 'Installa VB-Cable (microfono virtuale)',
+    'label-input-device': 'Microfono da usare nelle app',
+    'label-playback-device': 'Output soundboard',
+    'label-monitor-device': 'Monitor nelle cuffie',
+    'label-amplifier': 'Amplificatore (gain)',
+    'label-playback-vol': 'Volume soundboard',
+    'label-monitor-vol': 'Volume monitor',
+    'label-fade': 'Fade in / out',
+    'label-updates': 'Aggiornamenti',
+    'btn-check-updates': 'Controlla aggiornamenti',
+    'update-current': 'Versione attuale',
+    'btn-install-update': 'Riavvia e installa',
+    'route-status': 'Stato routing',
+    'route-soundboard': 'Soundboard',
+    'route-input': 'Input app',
+    'route-monitor': 'Monitor',
+    'btn-save-settings': 'Salva impostazioni',
+    'label-language': 'Lingua',
+    // Mic FX modal
+    'mic-fx-title': 'Effetti microfono',
+    'label-mic-intensity': 'Intensità effetto',
+    'label-mic-level': 'Livello microfono',
+    'label-self-monitor': 'Ascolta la tua voce filtrata nelle cuffie (monitor)',
+    // Presets
+    'preset-none': 'Nessuno', 'preset-girl': 'Ragazza', 'preset-mask': 'Maschera',
+    'preset-underwater': "Sott'acqua", 'preset-robot': 'Robot', 'preset-echo': 'Eco',
+    'preset-phone': 'Telefono',
+    // Default select options
+    'default-mic': 'Microfono predefinito',
+    'default-playback': 'Dispositivo di Riproduzione Predefinito',
+    'default-monitor': 'Dispositivo di Monitoraggio Predefinito',
+    'default-monitor-display': 'Non Attivo',
+    // Notifications
+    'notif-settings-saved': 'Impostazioni salvate con successo.',
+    'notif-file-unsupported': 'Estensione file non supportata! Usa MP3, MP4, WAV, OGG o M4A.',
+    'notif-no-file': 'Seleziona prima un file audio!',
+    'notif-save-error': 'Errore nel salvataggio del suono.',
+    'notif-vbcable-installed': 'VB-Cable installato con successo! Riavvia la soundboard per usarlo.',
+    'notif-shortcut-stolen': (shortcut, sound) => `La scorciatoia "${shortcut}" per il suono "${sound}" è stata riassegnata.`,
+    'notif-shortcut-failed': (shortcut) => `Impossibile registrare la scorciatoia "${shortcut}". Potrebbe essere già in uso da un'altra app.`,
+    'notif-shortcut-warning': 'Attenzione: i tasti senza modificatori bloccheranno la digitazione in altre app.',
+    'notif-mic-error': (err) => `Impossibile avviare gli effetti microfono: ${err}`,
+    'notif-output-matched': (dev) => `Output soundboard abbinato: ${dev}`,
+    'notif-audio-error': "Errore: motore audio non disponibile. Riavvia l'app.",
+    'notif-sound-error': (err) => `Errore: ${err}`,
+    // Cat / card UI
+    'cat-rename-title': 'Rinomina', 'cat-delete-title': 'Elimina',
+    'cat-name-ph': 'Nome categoria…',
+    'confirm-delete-sound': 'Sei sicuro di voler eliminare questo suono?',
+    'confirm-delete-cat': (name) => `Eliminare la categoria "${name}"?`,
+    'confirm-delete-cat-sounds': (name, count) => `Eliminare "${name}"? ${count} ${count === 1 ? 'suono tornerà' : 'suoni torneranno'} in "Tutti i suoni".`,
+    'rename-cat-prompt': (name) => `Nuovo nome categoria:`,
+    // Route summary
+    'route-hint-matched': "Il microfono scelto e l'output soundboard sono salvati. Nelle app seleziona quel microfono come input.",
+    'route-hint-mic': "Microfono scelto. Se usi VB-Cable/Voicemeeter, seleziona anche il relativo output come destinazione soundboard.",
+    'route-hint-default': "Scegli un microfono virtuale: se trovo l'output gemello lo imposto come destinazione della soundboard.",
+    'default-mic-display': 'Predefinito',
+    // Update
+    'update-checking': 'Controllo aggiornamenti…',
+    'update-available': (v) => `Nuova versione v${v} trovata. Download in corso…`,
+    'update-not-available': "Hai già l'ultima versione.",
+    'update-downloading': (p) => `Download aggiornamento… ${p}%`,
+    'update-downloaded-label': (v) => `Aggiornamento v${v} pronto da installare.`,
+    'update-downloaded-prompt': (v) => `È pronto l'aggiornamento v${v}. Riavviare e installare ora?`,
+    'update-notif-available': (v) => `Aggiornamento v${v} disponibile: download in corso…`,
+    'update-notif-downloaded': (v) => `Aggiornamento v${v} scaricato. Riavvia per installare.`,
+    'update-error-404': 'Nessuna release trovata su GitHub. Esegui npm run release per pubblicare la prima versione.',
+    'update-error-enoent': 'File di aggiornamento non trovato. Pubblica una release con npm run release.',
+    'update-error-network': 'Nessuna connessione a internet.',
+    'update-error-generic': 'Errore controllo aggiornamenti.',
+    'update-error-prefix': 'Errore controllo: ',
+    'update-not-packaged': 'Aggiornamenti disponibili solo nella versione installata.',
+    // VB-Cable
+    'vm-downloading': 'Download VB-Cable in corso…',
+    'vm-extracting': 'Estrazione…',
+    'vm-installing': 'Installazione (conferma la richiesta admin)…',
+    'vm-done-status': '✓ VB-Cable installato! Riavvia la soundboard per vederlo nei dispositivi.',
+    'vm-error-status': (msg) => `Errore: ${msg}`,
+    'vm-detect-error': 'Impossibile rilevare i dispositivi audio.',
+    // Language picker
+    'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    // Default cat names
+    'cat-music': 'Musica', 'cat-effects': 'Effetti',
+    // Mic FX hint (HTML allowed)
+    'mic-fx-hint': 'Per usare la voce con effetti nelle altre app, seleziona <strong>VB-Cable</strong> (lo stesso output della soundboard) come microfono. Il monitoraggio usa la periferica scelta in <strong>Routing audio &rarr; Monitor nelle cuffie</strong>.',
+  },
+  en: {
+    'brand-sub': 'Studio · Live',
+    'categories': 'Categories',
+    'btn-add-sound': 'New sound',
+    'all-sounds': 'All sounds',
+    'eyebrow-active-cat': 'Active category',
+    'sounds-count': (n) => `${n} ${n === 1 ? 'sound loaded' : 'sounds loaded'}`,
+    'empty-title': 'No sounds yet',
+    'empty-sub': 'Add your first sound to fill the board.',
+    'btn-empty-add': 'Add a sound',
+    'btn-stop-all': 'Stop all',
+    'live-text': 'Listening',
+    'search-ph': 'Search sound…',
+    'sound-modal-new': 'New sound',
+    'sound-modal-edit': 'Edit Sound',
+    'label-sound-title': 'Sound name',
+    'ph-sound-title': 'e.g. Applause, Drum, Laugh',
+    'label-file': 'Audio or video file',
+    'dropzone-hint': 'Drag file here or',
+    'dropzone-browse': 'browse',
+    'no-file': 'No file selected',
+    'label-category': 'Category',
+    'label-color': 'Color',
+    'label-volume': 'Volume',
+    'label-hotkey': 'Global shortcut',
+    'btn-record': 'Record',
+    'btn-recording': 'Release keys...',
+    'hotkey-none': 'None',
+    'hotkey-press': 'Press keys...',
+    'btn-cancel': 'Cancel',
+    'btn-save-sound': 'Save sound',
+    'btn-saving': 'Saving...',
+    'color-purple': 'Purple', 'color-magenta': 'Magenta', 'color-cyan': 'Cyan',
+    'color-green': 'Mint', 'color-yellow': 'Gold',
+    'settings-title': 'Audio Routing',
+    'label-virtual-mic': 'Virtual microphone',
+    'vm-searching': 'Searching…',
+    'vm-found': '✓ Virtual microphone (VB-Cable) already installed.',
+    'vm-not-found': 'No virtual microphone detected. Install VB-Cable to use your filtered voice in Discord, Teams, etc.',
+    'btn-install-vbcable': 'Install VB-Cable (virtual microphone)',
+    'label-input-device': 'Microphone to use in apps',
+    'label-playback-device': 'Soundboard output',
+    'label-monitor-device': 'Monitor in headphones',
+    'label-amplifier': 'Amplifier (gain)',
+    'label-playback-vol': 'Soundboard volume',
+    'label-monitor-vol': 'Monitor volume',
+    'label-fade': 'Fade in / out',
+    'label-updates': 'Updates',
+    'btn-check-updates': 'Check for updates',
+    'update-current': 'Current version',
+    'btn-install-update': 'Restart and install',
+    'route-status': 'Routing status',
+    'route-soundboard': 'Soundboard',
+    'route-input': 'App input',
+    'route-monitor': 'Monitor',
+    'btn-save-settings': 'Save settings',
+    'label-language': 'Language',
+    'mic-fx-title': 'Microphone effects',
+    'label-mic-intensity': 'Effect intensity',
+    'label-mic-level': 'Microphone level',
+    'label-self-monitor': 'Hear your filtered voice in headphones (monitor)',
+    'preset-none': 'None', 'preset-girl': 'Girl', 'preset-mask': 'Mask',
+    'preset-underwater': 'Underwater', 'preset-robot': 'Robot', 'preset-echo': 'Echo',
+    'preset-phone': 'Phone',
+    'default-mic': 'Default microphone',
+    'default-playback': 'Default playback device',
+    'default-monitor': 'Default monitor device',
+    'default-monitor-display': 'Inactive',
+    'notif-settings-saved': 'Settings saved successfully.',
+    'notif-file-unsupported': 'Unsupported file! Use MP3, MP4, WAV, OGG or M4A.',
+    'notif-no-file': 'Please select an audio file first!',
+    'notif-save-error': 'Error saving sound.',
+    'notif-vbcable-installed': 'VB-Cable installed! Restart the soundboard to use it.',
+    'notif-shortcut-stolen': (shortcut, sound) => `Shortcut "${shortcut}" for "${sound}" was reassigned.`,
+    'notif-shortcut-failed': (shortcut) => `Could not register shortcut "${shortcut}". It may be in use by another app.`,
+    'notif-shortcut-warning': 'Warning: keys without modifiers will block typing in other apps.',
+    'notif-mic-error': (err) => `Could not start mic effects: ${err}`,
+    'notif-output-matched': (dev) => `Soundboard output matched: ${dev}`,
+    'notif-audio-error': 'Error: audio engine unavailable. Restart the app.',
+    'notif-sound-error': (err) => `Error: ${err}`,
+    'cat-rename-title': 'Rename', 'cat-delete-title': 'Delete',
+    'cat-name-ph': 'Category name…',
+    'confirm-delete-sound': 'Are you sure you want to delete this sound?',
+    'confirm-delete-cat': (name) => `Delete category "${name}"?`,
+    'confirm-delete-cat-sounds': (name, count) => `Delete "${name}"? ${count} ${count === 1 ? 'sound' : 'sounds'} will return to "All sounds".`,
+    'rename-cat-prompt': () => `New category name:`,
+    'route-hint-matched': 'Microphone and soundboard output saved. Select that microphone as input in your apps.',
+    'route-hint-mic': 'Microphone chosen. If using VB-Cable/Voicemeeter, also select the matching output as soundboard destination.',
+    'route-hint-default': 'Choose a virtual microphone: if I find the matching output, I will set it as the soundboard destination.',
+    'default-mic-display': 'Default',
+    'update-checking': 'Checking for updates…',
+    'update-available': (v) => `New version v${v} found. Downloading…`,
+    'update-not-available': 'You already have the latest version.',
+    'update-downloading': (p) => `Downloading update… ${p}%`,
+    'update-downloaded-label': (v) => `Update v${v} ready to install.`,
+    'update-downloaded-prompt': (v) => `Update v${v} is ready. Restart and install now?`,
+    'update-notif-available': (v) => `Update v${v} available: downloading…`,
+    'update-notif-downloaded': (v) => `Update v${v} downloaded. Restart to install.`,
+    'update-error-404': 'No release found on GitHub. Run npm run release to publish the first version.',
+    'update-error-enoent': 'Update file not found. Publish a release with npm run release.',
+    'update-error-network': 'No internet connection.',
+    'update-error-generic': 'Update check error.',
+    'update-error-prefix': 'Check error: ',
+    'update-not-packaged': 'Updates only available in the installed version.',
+    'vm-downloading': 'Downloading VB-Cable…',
+    'vm-extracting': 'Extracting…',
+    'vm-installing': 'Installing (confirm the admin request)…',
+    'vm-done-status': '✓ VB-Cable installed! Restart the soundboard to see it in devices.',
+    'vm-error-status': (msg) => `Error: ${msg}`,
+    'vm-detect-error': 'Unable to detect audio devices.',
+    'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    'cat-music': 'Music', 'cat-effects': 'Effects',
+    'mic-fx-hint': 'To use your effected voice in other apps, select <strong>VB-Cable</strong> (the same output as the soundboard) as your microphone. Monitoring uses the device selected in <strong>Audio Routing &rarr; Monitor in headphones</strong>.',
+  },
+  es: {
+    'brand-sub': 'Estudio · Directo',
+    'categories': 'Categorías',
+    'btn-add-sound': 'Nuevo sonido',
+    'all-sounds': 'Todos los sonidos',
+    'eyebrow-active-cat': 'Categoría activa',
+    'sounds-count': (n) => `${n} ${n === 1 ? 'sonido cargado' : 'sonidos cargados'}`,
+    'empty-title': 'Aún sin sonidos',
+    'empty-sub': 'Añade tu primer sonido para llenar el tablero.',
+    'btn-empty-add': 'Añadir un sonido',
+    'btn-stop-all': 'Detener todo',
+    'live-text': 'Escuchando',
+    'search-ph': 'Buscar sonido…',
+    'sound-modal-new': 'Nuevo sonido',
+    'sound-modal-edit': 'Editar Sonido',
+    'label-sound-title': 'Nombre del sonido',
+    'ph-sound-title': 'Ej. Aplausos, Tambor, Risa',
+    'label-file': 'Archivo de audio o vídeo',
+    'dropzone-hint': 'Arrastra el archivo aquí o',
+    'dropzone-browse': 'busca',
+    'no-file': 'Ningún archivo seleccionado',
+    'label-category': 'Categoría',
+    'label-color': 'Color',
+    'label-volume': 'Volumen',
+    'label-hotkey': 'Atajo global',
+    'btn-record': 'Grabar',
+    'btn-recording': 'Suelta las teclas...',
+    'hotkey-none': 'Ninguno',
+    'hotkey-press': 'Pulsa las teclas...',
+    'btn-cancel': 'Cancelar',
+    'btn-save-sound': 'Guardar sonido',
+    'btn-saving': 'Guardando...',
+    'color-purple': 'Violeta', 'color-magenta': 'Magenta', 'color-cyan': 'Cian',
+    'color-green': 'Menta', 'color-yellow': 'Oro',
+    'settings-title': 'Enrutamiento de audio',
+    'label-virtual-mic': 'Micrófono virtual',
+    'vm-searching': 'Buscando…',
+    'vm-found': '✓ Micrófono virtual (VB-Cable) ya instalado.',
+    'vm-not-found': 'No se detectó micrófono virtual. Instala VB-Cable para usar tu voz filtrada en Discord, Teams, etc.',
+    'btn-install-vbcable': 'Instalar VB-Cable (micrófono virtual)',
+    'label-input-device': 'Micrófono a usar en las apps',
+    'label-playback-device': 'Salida del tablero',
+    'label-monitor-device': 'Monitor en auriculares',
+    'label-amplifier': 'Amplificador (ganancia)',
+    'label-playback-vol': 'Volumen del tablero',
+    'label-monitor-vol': 'Volumen del monitor',
+    'label-fade': 'Fade in / out',
+    'label-updates': 'Actualizaciones',
+    'btn-check-updates': 'Buscar actualizaciones',
+    'update-current': 'Versión actual',
+    'btn-install-update': 'Reiniciar e instalar',
+    'route-status': 'Estado de enrutamiento',
+    'route-soundboard': 'Tablero',
+    'route-input': 'Entrada de la app',
+    'route-monitor': 'Monitor',
+    'btn-save-settings': 'Guardar ajustes',
+    'label-language': 'Idioma',
+    'mic-fx-title': 'Efectos de micrófono',
+    'label-mic-intensity': 'Intensidad del efecto',
+    'label-mic-level': 'Nivel del micrófono',
+    'label-self-monitor': 'Escucha tu voz filtrada en los auriculares (monitor)',
+    'preset-none': 'Ninguno', 'preset-girl': 'Chica', 'preset-mask': 'Máscara',
+    'preset-underwater': 'Bajo el agua', 'preset-robot': 'Robot', 'preset-echo': 'Eco',
+    'preset-phone': 'Teléfono',
+    'default-mic': 'Micrófono predeterminado',
+    'default-playback': 'Dispositivo de reproducción predeterminado',
+    'default-monitor': 'Dispositivo de monitoreo predeterminado',
+    'default-monitor-display': 'No Activo',
+    'notif-settings-saved': 'Ajustes guardados correctamente.',
+    'notif-file-unsupported': '¡Extensión no compatible! Usa MP3, MP4, WAV, OGG o M4A.',
+    'notif-no-file': '¡Selecciona primero un archivo de audio!',
+    'notif-save-error': 'Error al guardar el sonido.',
+    'notif-vbcable-installed': '¡VB-Cable instalado! Reinicia el tablero para usarlo.',
+    'notif-shortcut-stolen': (shortcut, sound) => `El atajo "${shortcut}" de "${sound}" fue reasignado.`,
+    'notif-shortcut-failed': (shortcut) => `No se pudo registrar el atajo "${shortcut}". Puede que esté en uso por otra app.`,
+    'notif-shortcut-warning': 'Aviso: las teclas sin modificadores bloquearán la escritura en otras apps.',
+    'notif-mic-error': (err) => `No se pudieron iniciar los efectos del micrófono: ${err}`,
+    'notif-output-matched': (dev) => `Salida del tablero emparejada: ${dev}`,
+    'notif-audio-error': 'Error: motor de audio no disponible. Reinicia la app.',
+    'notif-sound-error': (err) => `Error: ${err}`,
+    'cat-rename-title': 'Renombrar', 'cat-delete-title': 'Eliminar',
+    'cat-name-ph': 'Nombre de categoría…',
+    'confirm-delete-sound': '¿Seguro que quieres eliminar este sonido?',
+    'confirm-delete-cat': (name) => `¿Eliminar la categoría "${name}"?`,
+    'confirm-delete-cat-sounds': (name, count) => `¿Eliminar "${name}"? ${count} ${count === 1 ? 'sonido volverá' : 'sonidos volverán'} a "Todos los sonidos".`,
+    'rename-cat-prompt': () => `Nuevo nombre de categoría:`,
+    'route-hint-matched': 'Micrófono y salida del tablero guardados. Selecciona ese micrófono como entrada en tus apps.',
+    'route-hint-mic': 'Micrófono elegido. Si usas VB-Cable/Voicemeeter, selecciona también la salida correspondiente como destino del tablero.',
+    'route-hint-default': 'Elige un micrófono virtual: si encuentro la salida gemela, la configuro como destino del tablero.',
+    'default-mic-display': 'Predeterminado',
+    'update-checking': 'Buscando actualizaciones…',
+    'update-available': (v) => `Nueva versión v${v} encontrada. Descargando…`,
+    'update-not-available': 'Ya tienes la última versión.',
+    'update-downloading': (p) => `Descargando actualización… ${p}%`,
+    'update-downloaded-label': (v) => `Actualización v${v} lista para instalar.`,
+    'update-downloaded-prompt': (v) => `La actualización v${v} está lista. ¿Reiniciar e instalar ahora?`,
+    'update-notif-available': (v) => `Actualización v${v} disponible: descargando…`,
+    'update-notif-downloaded': (v) => `Actualización v${v} descargada. Reinicia para instalar.`,
+    'update-error-404': 'No se encontró ningún release en GitHub. Ejecuta npm run release para publicar la primera versión.',
+    'update-error-enoent': 'Archivo de actualización no encontrado. Publica un release con npm run release.',
+    'update-error-network': 'Sin conexión a internet.',
+    'update-error-generic': 'Error al buscar actualizaciones.',
+    'update-error-prefix': 'Error de comprobación: ',
+    'update-not-packaged': 'Las actualizaciones solo están disponibles en la versión instalada.',
+    'vm-downloading': 'Descargando VB-Cable…',
+    'vm-extracting': 'Extrayendo…',
+    'vm-installing': 'Instalando (confirma la solicitud de administrador)…',
+    'vm-done-status': '✓ ¡VB-Cable instalado! Reinicia el tablero para verlo en los dispositivos.',
+    'vm-error-status': (msg) => `Error: ${msg}`,
+    'vm-detect-error': 'No se pueden detectar los dispositivos de audio.',
+    'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    'cat-music': 'Música', 'cat-effects': 'Efectos',
+    'mic-fx-hint': 'Para usar tu voz con efectos en otras apps, selecciona <strong>VB-Cable</strong> (la misma salida que el tablero) como micrófono. El monitor usa el dispositivo seleccionado en <strong>Enrutamiento de audio &rarr; Monitor en auriculares</strong>.',
+  }
+};
+
+// t(key, ...args) — look up a translation string; args are passed if the value is a function
+function t(key, ...args) {
+  const dict = STRINGS[currentLang] || STRINGS.it;
+  const val = dict[key] ?? STRINGS.it[key];
+  if (typeof val === 'function') return val(...args);
+  return val ?? key;
+}
+
+// Apply the selected language to all translatable DOM elements
+function applyLanguage(lang) {
+  if (lang && STRINGS[lang]) currentLang = lang;
+  else currentLang = 'it';
+
+  // Static labels / buttons
+  const set = (id, key, html = false) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (html) el.innerHTML = t(key);
+    else el.textContent = t(key);
+  };
+  const setAttr = (id, attr, key) => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute(attr, t(key));
+  };
+
+  set('brand-sub-text', 'brand-sub');
+  set('sidebar-cats-label', 'categories');
+  set('btn-add-sound-text', 'btn-add-sound');
+  set('btn-empty-add-text', 'btn-empty-add');
+  set('eyebrow-cat', 'eyebrow-active-cat');
+  set('btn-stop-all-label', 'btn-stop-all');
+  set('live-text', 'live-text');
+  set('empty-title', 'empty-title');
+  set('empty-sub', 'empty-sub');
+  setAttr('search-input', 'placeholder', 'search-ph');
+
+  // Sound modal
+  set('label-sound-title', 'label-sound-title');
+  setAttr('sound-title', 'placeholder', 'ph-sound-title');
+  set('label-file-upload', 'label-file');
+  set('dropzone-hint-text', 'dropzone-hint');
+  set('link-browse-file', 'dropzone-browse');
+  set('file-name-preview', 'no-file');
+  set('label-sound-category', 'label-category');
+  set('label-sound-color', 'label-color');
+  set('label-sound-volume', 'label-volume');
+  set('label-hotkey-field', 'label-hotkey');
+  set('btn-record-hotkey', 'btn-record');
+  set('hotkey-display', 'hotkey-none');
+  set('btn-cancel-sound-modal', 'btn-cancel');
+  set('btn-submit-sound-modal', 'btn-save-sound');
+
+  // Color options in the color select
+  const colorSel = document.getElementById('sound-color');
+  if (colorSel) {
+    Array.from(colorSel.options).forEach(opt => {
+      const key = 'color-' + opt.value;
+      const tr = t(key);
+      if (tr !== key) opt.textContent = tr;
+    });
+  }
+
+  // Settings modal
+  set('settings-modal-title', 'settings-title');
+  set('label-virtual-mic-field', 'label-virtual-mic');
+  set('btn-install-vbcable', 'btn-install-vbcable');
+  set('label-input-device-field', 'label-input-device');
+  set('label-playback-device-field', 'label-playback-device');
+  set('label-monitor-device-field', 'label-monitor-device');
+  set('label-amplifier-field', 'label-amplifier');
+  set('label-playback-vol-field', 'label-playback-vol');
+  set('label-monitor-vol-field', 'label-monitor-vol');
+  set('label-fade-field', 'label-fade');
+  set('label-updates-field', 'label-updates');
+  set('btn-check-updates', 'btn-check-updates');
+  set('btn-install-update', 'btn-install-update');
+  set('route-status-title', 'route-status');
+  set('route-soundboard-label', 'route-soundboard');
+  set('route-input-label', 'route-input');
+  set('route-monitor-label', 'route-monitor');
+  set('btn-save-settings', 'btn-save-settings');
+  set('label-language-field', 'label-language');
+
+  // Device dropdowns — update the "default" option labels
+  const defOptUpdate = (selId, key) => {
+    const sel = document.getElementById(selId);
+    if (sel && sel.options[0]) sel.options[0].textContent = t(key);
+  };
+  defOptUpdate('select-input-device', 'default-mic');
+  defOptUpdate('select-playback-device', 'default-playback');
+  defOptUpdate('select-monitor-device', 'default-monitor');
+
+  // Mic FX modal
+  set('mic-fx-modal-title', 'mic-fx-title');
+  set('label-mic-intensity-field', 'label-mic-intensity');
+  set('label-mic-level-field', 'label-mic-level');
+  set('label-self-monitor-field', 'label-self-monitor');
+  set('mic-fx-hint-el', 'mic-fx-hint', true);
+
+  // Re-render presets so names update
+  renderMicPresets();
+
+  // Re-render categories so "all sounds" label updates
+  renderCategories();
+  renderSoundGrid();
+
+  // Highlight the active language button
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('lang-btn-active', b.dataset.lang === currentLang);
+  });
+}
+
+// Show the language picker overlay (first-launch)
+function showLanguagePicker() {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('lang-picker-overlay');
+    if (!overlay) { resolve(); return; }
+    overlay.classList.add('open');
+    overlay.querySelectorAll('.lang-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        currentLang = lang;
+        settings.language = lang;
+        saveAppData();
+        applyLanguage(lang);
+        overlay.classList.remove('open');
+        resolve();
+      }, { once: true });
+    });
+  });
+}
+
 const DEFAULT_CATEGORIES = [
   { id: 'meme', name: 'Meme', color: 'magenta' },
   { id: 'gaming', name: 'Gaming', color: 'cyan' },
@@ -36,15 +533,15 @@ const DEFAULT_CATEGORIES = [
   { id: 'effects', name: 'Effetti', color: 'green' }
 ];
 
-// Microphone effect presets
+// Microphone effect presets — names resolved via t() so they follow the active language
 const MIC_PRESETS = [
-  { id: 'none', name: 'Nessuno', icon: '<path d="M5 12h14"></path>' },
-  { id: 'girl', name: 'Ragazza', icon: '<path d="M12 3v10"></path><path d="m8 7 4-4 4 4"></path><circle cx="12" cy="18" r="3"></circle>' },
-  { id: 'mask', name: 'Maschera', icon: '<path d="M12 21v-10"></path><path d="m8 17 4 4 4-4"></path><circle cx="12" cy="6" r="3"></circle>' },
-  { id: 'underwater', name: "Sott'acqua", icon: '<path d="M3 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"></path><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"></path>' },
-  { id: 'robot', name: 'Robot', icon: '<rect x="5" y="8" width="14" height="11" rx="2"></rect><path d="M12 8V4M9 13h.01M15 13h.01"></path>' },
-  { id: 'echo', name: 'Eco', icon: '<path d="M4 12h2l2-6 3 14 2-9 1.5 4H20"></path>' },
-  { id: 'phone', name: 'Telefono', icon: '<path d="M5 4h4l1.5 5-2 1a12 12 0 0 0 5 5l1-2 5 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"></path>' }
+  { id: 'none', nameKey: 'preset-none', icon: '<path d="M5 12h14"></path>' },
+  { id: 'girl', nameKey: 'preset-girl', icon: '<path d="M12 3v10"></path><path d="m8 7 4-4 4 4"></path><circle cx="12" cy="18" r="3"></circle>' },
+  { id: 'mask', nameKey: 'preset-mask', icon: '<path d="M12 21v-10"></path><path d="m8 17 4 4 4-4"></path><circle cx="12" cy="6" r="3"></circle>' },
+  { id: 'underwater', nameKey: 'preset-underwater', icon: '<path d="M3 8c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"></path><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"></path>' },
+  { id: 'robot', nameKey: 'preset-robot', icon: '<rect x="5" y="8" width="14" height="11" rx="2"></rect><path d="M12 8V4M9 13h.01M15 13h.01"></path>' },
+  { id: 'echo', nameKey: 'preset-echo', icon: '<path d="M4 12h2l2-6 3 14 2-9 1.5 4H20"></path>' },
+  { id: 'phone', nameKey: 'preset-phone', icon: '<path d="M5 4h4l1.5 5-2 1a12 12 0 0 0 5 5l1-2 5 1.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"></path>' }
 ];
 
 // Audio Engine variables
@@ -64,6 +561,11 @@ let micTeardownFns = [];
 let micMonitorContext = null;
 let micMonitorSource = null;
 let micMonitorTeardownFns = [];
+
+// Generation counters — prevent concurrent startMic* calls from overlapping
+let _micEffectGen = 0;
+let _micMonitorGen = 0;
+let _rebuildMicTimer = null;
 
 const audioBufferCache = new Map(); // key: filePath, value: AudioBuffer
 const activePlayingSounds = new Map(); // key: soundId, value: { sourcePlay, gainPlay, sourceMon, gainMon, intervalId, startTime, duration }
@@ -128,7 +630,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       sound.hotkey = '';
       saveAppData();
       renderSoundGrid();
-      showNotification(`La scorciatoia "${shortcut}" per il suono "${sound.title}" è stata riassegnata.`);
+      showNotification(t('notif-shortcut-stolen', shortcut, sound.title));
     }
   });
 });
@@ -140,7 +642,7 @@ async function requestMediaPermissions() {
     // Stop the tracks immediately as we only needed permission
     stream.getTracks().forEach(track => track.stop());
   } catch (err) {
-    console.warn("Impossibile ottenere l'accesso al microfono per elencare i dispositivi. Verranno mostrati nomi generici.", err);
+    console.warn('Could not get microphone access to list devices. Generic names will be shown.', err);
   }
 }
 
@@ -167,14 +669,23 @@ async function loadAppData() {
   if (typeof settings.micEffect.selfMonitor !== 'boolean') {
     settings.micEffect.selfMonitor = false;
   }
-  
+
+  // Apply saved language (or show picker if not yet chosen)
+  if (settings.language && STRINGS[settings.language]) {
+    currentLang = settings.language;
+  } else {
+    // First launch: show language picker before continuing
+    await showLanguagePicker();
+  }
+  applyLanguage(currentLang);
+
   // Register all saved hotkeys in the Electron backend
   for (const sound of sounds) {
     if (sound.hotkey) {
       await window.electronAPI.registerShortcut(sound.id, sound.hotkey);
     }
   }
-  
+
   // Set UI elements with loaded settings
   updateSettingsUI();
   updateStatusPanel();
@@ -235,11 +746,11 @@ function updateStatusPanel() {
   const playSelect = document.getElementById('select-playback-device');
   const monSelect = document.getElementById('select-monitor-device');
 
-  const micName = inputSelect.options[inputSelect.selectedIndex]?.text || settings.microphoneDeviceId || 'Predefinito';
+  const micName = inputSelect.options[inputSelect.selectedIndex]?.text || settings.microphoneDeviceId || t('default-mic-display');
   const playName = playSelect.options[playSelect.selectedIndex]?.text || settings.playbackDeviceId;
-  const monName = settings.monitorEnabled 
-    ? (monSelect.options[monSelect.selectedIndex]?.text || settings.monitorDeviceId) 
-    : 'Non Attivo';
+  const monName = settings.monitorEnabled
+    ? (monSelect.options[monSelect.selectedIndex]?.text || settings.monitorDeviceId)
+    : t('default-monitor-display');
 
   document.getElementById('status-playback-device').textContent = playName;
   document.getElementById('status-microphone-device').textContent = micName;
@@ -291,17 +802,17 @@ function updateRouteSummary() {
   routePlayback.textContent = playSelect.options[playSelect.selectedIndex]?.text || 'Default';
   routeMicrophone.textContent = inputSelect.options[inputSelect.selectedIndex]?.text || 'Microfono predefinito';
   routeMonitor.textContent = settings.monitorEnabled
-    ? (monSelect.options[monSelect.selectedIndex]?.text || 'Default')
-    : 'Non Attivo';
+    ? (monSelect.options[monSelect.selectedIndex]?.text || t('default-mic-display'))
+    : t('default-monitor-display');
 
   const micSelected = (settings.microphoneDeviceId || 'default') !== 'default';
   const outputSelected = settings.playbackDeviceId !== 'default';
   if (micSelected && outputSelected) {
-    hint.textContent = 'Il microfono scelto e l\'output soundboard sono salvati. Nelle app seleziona quel microfono come input.';
+    hint.textContent = t('route-hint-matched');
   } else if (micSelected) {
-    hint.textContent = 'Microfono scelto. Se usi VB-Cable/Voicemeeter, seleziona anche il relativo output come destinazione soundboard.';
+    hint.textContent = t('route-hint-mic');
   } else {
-    hint.textContent = 'Scegli un microfono virtuale: se trovo l\'output gemello lo imposto come destinazione della soundboard.';
+    hint.textContent = t('route-hint-default');
   }
 }
 
@@ -327,9 +838,9 @@ async function refreshAudioDevices() {
     monSelect.innerHTML = '';
 
     // Add Default option
-    const defOptionInput = new Option('Microfono predefinito', 'default');
-    const defOptionPlay = new Option('Dispositivo di Riproduzione Predefinito', 'default');
-    const defOptionMon = new Option('Dispositivo di Monitoraggio Predefinito', 'default');
+    const defOptionInput = new Option(t('default-mic'), 'default');
+    const defOptionPlay = new Option(t('default-playback'), 'default');
+    const defOptionMon = new Option(t('default-monitor'), 'default');
     inputSelect.add(defOptionInput);
     playSelect.add(defOptionPlay);
     monSelect.add(defOptionMon);
@@ -457,7 +968,7 @@ async function getDecodedBuffer(filePath) {
 async function playSound(sound) {
   if (!playbackContext) initAudioEngine();
   if (!playbackContext) {
-    showNotification("Errore: motore audio non disponibile. Riavvia l'app.");
+    showNotification(t('notif-audio-error'));
     return;
   }
 
@@ -599,7 +1110,7 @@ async function playSound(sound) {
   } catch (err) {
     setCardLoading(sound.id, false);
     console.error("Errore durante la riproduzione del suono:", err);
-    showNotification(`Errore: ${err?.message || 'file non supportato'}`);
+    showNotification(t('notif-sound-error', err?.message || 'file non supportato'));
   }
 }
 
@@ -701,12 +1212,12 @@ function renderCategories() {
   }
 
   list.innerHTML = '';
-  list.appendChild(buildCategoryItem({ id: 'all', name: 'Tutti i suoni', color: null }, false));
+  list.appendChild(buildCategoryItem({ id: 'all', name: t('all-sounds'), color: null }, false));
   settings.categories.forEach(cat => list.appendChild(buildCategoryItem(cat, true)));
 
   const activeName = activeCategory === 'all'
-    ? 'Tutti i suoni'
-    : (settings.categories.find(c => c.id === activeCategory)?.name || 'Tutti i suoni');
+    ? t('all-sounds')
+    : (settings.categories.find(c => c.id === activeCategory)?.name || t('all-sounds'));
   document.getElementById('current-category-title').textContent = activeName;
 }
 
@@ -718,10 +1229,10 @@ function buildCategoryItem(cat, editable) {
 
   li.innerHTML = `<span class="cat-name">${escapeHtml(cat.name)}</span>` + (editable ? `
     <span class="cat-actions">
-      <button class="cat-act rename" title="Rinomina" aria-label="Rinomina">
+      <button class="cat-act rename" title="${t('cat-rename-title')}" aria-label="${t('cat-rename-title')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
       </button>
-      <button class="cat-act remove" title="Elimina" aria-label="Elimina">
+      <button class="cat-act remove" title="${t('cat-delete-title')}" aria-label="${t('cat-delete-title')}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg>
       </button>
     </span>` : '');
@@ -781,6 +1292,7 @@ function openCategoryInlineEdit() {
 
   list.appendChild(li);
   const input = li.querySelector('.cat-edit-input');
+  input.placeholder = t('cat-name-ph');
   input.focus();
 
   let committed = false;
@@ -811,7 +1323,7 @@ function openCategoryInlineEdit() {
 function renameCategory(id) {
   const cat = settings.categories.find(c => c.id === id);
   if (!cat) return;
-  const name = prompt('Nuovo nome categoria:', cat.name);
+  const name = prompt(t('rename-cat-prompt', cat.name), cat.name);
   if (name === null) return;
   const trimmed = name.trim();
   if (!trimmed) return;
@@ -825,8 +1337,8 @@ function deleteCategory(id) {
   if (!cat) return;
   const count = sounds.filter(s => s.category === id).length;
   const msg = count > 0
-    ? `Eliminare "${cat.name}"? ${count} suon${count === 1 ? 'o' : 'i'} torner${count === 1 ? 'à' : 'anno'} in "Tutti i suoni".`
-    : `Eliminare la categoria "${cat.name}"?`;
+    ? t('confirm-delete-cat-sounds', cat.name, count)
+    : t('confirm-delete-cat', cat.name);
   if (!confirm(msg)) return;
   sounds.forEach(s => { if (s.category === id) s.category = ''; });
   settings.categories = settings.categories.filter(c => c.id !== id);
@@ -875,7 +1387,7 @@ function renderSoundGrid() {
   }
 
   // Update counts
-  document.getElementById('sounds-count').textContent = `${filtered.length} ${filtered.length === 1 ? 'suono caricato' : 'suoni caricati'}`;
+  document.getElementById('sounds-count').textContent = t('sounds-count', filtered.length);
 
   // If empty
   if (filtered.length === 0) {
@@ -890,7 +1402,7 @@ function renderSoundGrid() {
 
   filtered.forEach((sound, index) => {
     const isPlaying = activePlayingSounds.has(sound.id);
-    const hotkeyText = sound.hotkey ? sound.hotkey : 'Nessuna';
+    const hotkeyText = sound.hotkey ? sound.hotkey : t('hotkey-none');
 
     const card = document.createElement('div');
     card.className = `sound-card pad color-${sound.color || 'purple'} ${isPlaying ? 'playing' : ''}`;
@@ -974,7 +1486,7 @@ function renderSoundGrid() {
 
 // Add/Edit Sound Actions
 async function deleteSound(soundId) {
-  if (confirm("Sei sicuro di voler eliminare questo suono?")) {
+  if (confirm(t('confirm-delete-sound'))) {
     stopSound(soundId);
     
     // Unregister hotkey
@@ -995,17 +1507,17 @@ function openSoundModal(sound = null) {
   // Reset form
   form.reset();
   populateCategorySelect();
-  document.getElementById('file-name-preview').textContent = "Nessun file selezionato";
+  document.getElementById('file-name-preview').textContent = t('no-file');
   document.getElementById('sound-file-path').value = '';
   document.getElementById('sound-id').value = '';
   document.getElementById('sound-hotkey').value = '';
-  document.getElementById('hotkey-display').textContent = 'Nessuna';
+  document.getElementById('hotkey-display').textContent = t('hotkey-none');
   document.getElementById('sound-volume-val').textContent = '80%';
   document.getElementById('sound-volume').value = 80;
   updateRangeFill(document.getElementById('sound-volume'));
   
   if (sound) {
-    title.textContent = "Modifica Suono";
+    title.textContent = t('sound-modal-edit');
     document.getElementById('sound-id').value = sound.id;
     document.getElementById('sound-title').value = sound.title;
     document.getElementById('sound-file-path').value = sound.filePath;
@@ -1020,9 +1532,9 @@ function openSoundModal(sound = null) {
     document.getElementById('sound-volume-val').textContent = `${sound.volume}%`;
     updateRangeFill(document.getElementById('sound-volume'));
     document.getElementById('sound-hotkey').value = sound.hotkey;
-    document.getElementById('hotkey-display').textContent = sound.hotkey || 'Nessuna';
+    document.getElementById('hotkey-display').textContent = sound.hotkey || t('hotkey-none');
   } else {
-    title.textContent = "Nuovo Suono";
+    title.textContent = t('sound-modal-new');
   }
 
   modal.classList.add('open');
@@ -1035,7 +1547,7 @@ function closeSoundModal() {
   const recordBtn = document.getElementById('btn-record-hotkey');
   recordBtn.classList.remove('btn-accent');
   recordBtn.classList.add('btn-soft');
-  recordBtn.textContent = "Registra";
+  recordBtn.textContent = t('btn-record');
   document.getElementById('hotkey-display').classList.remove('recording');
 }
 
@@ -1053,76 +1565,68 @@ function startHotkeyRecording(soundId) {
   isRecordingHotkey = true;
   recordingSoundId = soundId;
   recordedKeys.clear();
-  
+
   const recordBtn = document.getElementById('btn-record-hotkey');
-  recordBtn.textContent = "Rilascia i tasti per salvare...";
+  recordBtn.textContent = t('btn-recording');
   recordBtn.classList.add('btn-accent');
   recordBtn.classList.remove('btn-soft');
-  
+
   const hotkeyDisplay = document.getElementById('hotkey-display');
-  hotkeyDisplay.textContent = "Premi i tasti...";
+  hotkeyDisplay.textContent = t('hotkey-press');
   hotkeyDisplay.classList.add('recording');
 }
 
 function stopHotkeyRecording(cancelled = false) {
   isRecordingHotkey = false;
-  
+
   const recordBtn = document.getElementById('btn-record-hotkey');
   recordBtn.classList.remove('btn-accent');
   recordBtn.classList.add('btn-soft');
-  recordBtn.textContent = "Registra";
+  recordBtn.textContent = t('btn-record');
 
   const hotkeyDisplay = document.getElementById('hotkey-display');
   hotkeyDisplay.classList.remove('recording');
 
   if (cancelled) {
     const inputVal = document.getElementById('sound-hotkey').value;
-    hotkeyDisplay.textContent = inputVal || 'Nessuna';
+    hotkeyDisplay.textContent = inputVal || t('hotkey-none');
     return;
   }
 
-  // Format hotkey for Electron
   const shortcutStr = formatElectronShortcut(recordedKeys);
   if (shortcutStr) {
     document.getElementById('sound-hotkey').value = shortcutStr;
     hotkeyDisplay.textContent = shortcutStr;
+    // One-time warning when no modifier is used (single key will intercept typing in other apps)
+    const hasModifier = recordedKeys.has('Control') || recordedKeys.has('Alt') || recordedKeys.has('Shift');
+    if (!hasModifier) {
+      showNotification(t('notif-shortcut-warning'));
+    }
   } else {
-    hotkeyDisplay.textContent = 'Nessuna';
+    hotkeyDisplay.textContent = t('hotkey-none');
     document.getElementById('sound-hotkey').value = '';
   }
 }
 
-// Translate key states to Electron shortcut representation
+// Translate key states to Electron shortcut representation.
+// Returns '' if there is no non-modifier key in the set.
 function formatElectronShortcut(keysSet) {
   const parts = [];
-  
-  // Sort modifiers first
   if (keysSet.has('Control')) parts.push('Ctrl');
   if (keysSet.has('Alt')) parts.push('Alt');
   if (keysSet.has('Shift')) parts.push('Shift');
-  
-  // Find non-modifier key
+
   for (const key of keysSet) {
     if (key !== 'Control' && key !== 'Alt' && key !== 'Shift') {
-      // Format main key
-      if (key === ' ') {
-        parts.push('Space');
-      } else if (key.length === 1) {
-        parts.push(key.toUpperCase());
-      } else {
-        // e.g. F1-F12, Enter, Escape etc.
-        parts.push(key);
-      }
+      if (key === ' ') parts.push('Space');
+      else if (key.length === 1) parts.push(key.toUpperCase());
+      else parts.push(key);
     }
   }
 
-  // Minimum required: either a function key, or modifier + standard key
-  if (parts.length === 1 && !parts[0].match(/^F\d+$/)) {
-    // Single letter/number/symbol hotkeys without modifiers are generally not supported 
-    // globally by Electron as they block standard typing. Force modifier.
-    showNotification("Le scorciatoie globali a tasto singolo devono essere tasti funzione (es. F1-F12). Usa combinazioni come Ctrl+Alt+Lettera.");
-    return '';
-  }
+  // Require at least one non-modifier key
+  const hasMain = parts.some(p => !['Ctrl', 'Alt', 'Shift'].includes(p));
+  if (!hasMain) return '';
 
   return parts.join('+');
 }
@@ -1203,7 +1707,7 @@ function setupEventListeners() {
       if (validExtensions.includes(ext)) {
         handleFileSelected(file.path);
       } else {
-        showNotification("Estensione file non supportata! Usa MP3, MP4, WAV, OGG o M4A.");
+        showNotification(t('notif-file-unsupported'));
       }
     }
   });
@@ -1260,7 +1764,7 @@ function setupEventListeners() {
     document.getElementById('val-mic-intensity').textContent = `${e.target.value}%`;
     updateRangeFill(e.target);
     saveAppData();
-    rebuildMicGraphs();
+    rebuildMicGraphsDebounced();
   });
 
   // Self-monitor: hear your own filtered voice in your headphones (monitor device)
@@ -1290,7 +1794,7 @@ function setupEventListeners() {
     if (matchedOutput) {
       settings.playbackDeviceId = matchedOutput.deviceId;
       document.getElementById('select-playback-device').value = matchedOutput.deviceId;
-      showNotification(`Output soundboard abbinato: ${matchedOutput.label}`);
+      showNotification(t('notif-output-matched', matchedOutput.label));
     }
 
     updateStatusPanel();
@@ -1370,7 +1874,7 @@ function setupEventListeners() {
     const hotkey = document.getElementById('sound-hotkey').value;
 
     if (!filePathVal) {
-      showNotification("Seleziona prima un file audio!");
+      showNotification(t('notif-no-file'));
       return;
     }
 
@@ -1417,7 +1921,7 @@ function setupEventListeners() {
       if (hotkey) {
         const success = await window.electronAPI.registerShortcut(soundObject.id, hotkey);
         if (!success) {
-          showNotification(`Impossibile registrare la scorciatoia "${hotkey}". Potrebbe essere già in uso da un'altra app.`);
+          showNotification(t('notif-shortcut-failed', hotkey));
           soundObject.hotkey = ''; // reset hotkey
           await saveAppData();
         }
@@ -1430,8 +1934,18 @@ function setupEventListeners() {
     } catch (err) {
       setModalSavingState(false);
       console.error(err);
-      showNotification("Errore nel salvataggio del suono.");
+      showNotification(t('notif-save-error'));
     }
+  });
+
+  // Language selector (in settings modal and first-launch picker)
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      settings.language = lang;
+      saveAppData();
+      applyLanguage(lang);
+    });
   });
 
   // Settings Save
@@ -1458,7 +1972,7 @@ function setupEventListeners() {
 
     closeSettingsModal();
     renderSoundGrid();
-    showNotification("Impostazioni salvate con successo.");
+    showNotification(t('notif-settings-saved'));
   });
 }
 
@@ -1467,10 +1981,10 @@ function setModalSavingState(isSaving) {
   const submitBtn = document.getElementById('btn-submit-sound-modal');
   if (isSaving) {
     submitBtn.disabled = true;
-    submitBtn.textContent = "Salvataggio...";
+    submitBtn.textContent = t('btn-saving');
   } else {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Salva Suono";
+    submitBtn.textContent = t('btn-save-sound');
   }
 }
 
@@ -1530,13 +2044,13 @@ async function initUpdater() {
   } catch (e) { /* ignore */ }
 
   checkBtn?.addEventListener('click', async () => {
-    if (statusEl) statusEl.textContent = 'Controllo aggiornamenti…';
+    if (statusEl) statusEl.textContent = t('update-checking');
     const res = await window.electronAPI.checkForUpdates();
     if (res && !res.ok) {
       if (res.reason === 'not-packaged') {
-        if (statusEl) statusEl.textContent = 'Aggiornamenti disponibili solo nella versione installata.';
+        if (statusEl) statusEl.textContent = t('update-not-packaged');
       } else {
-        if (statusEl) statusEl.textContent = 'Errore controllo: ' + res.reason;
+        if (statusEl) statusEl.textContent = t('update-error-prefix') + res.reason;
       }
     }
   });
@@ -1547,34 +2061,34 @@ async function initUpdater() {
     if (!p) return;
     switch (p.state) {
       case 'checking':
-        if (statusEl) statusEl.textContent = 'Controllo aggiornamenti…';
+        if (statusEl) statusEl.textContent = t('update-checking');
         break;
       case 'available':
-        if (statusEl) statusEl.textContent = `Nuova versione v${p.version} trovata. Download in corso…`;
-        showNotification(`Aggiornamento v${p.version} disponibile: download in corso…`);
+        if (statusEl) statusEl.textContent = t('update-available', p.version);
+        showNotification(t('update-notif-available', p.version));
         break;
       case 'not-available':
-        if (statusEl) statusEl.textContent = 'Hai già l\'ultima versione.';
+        if (statusEl) statusEl.textContent = t('update-not-available');
         break;
       case 'downloading':
-        if (statusEl) statusEl.textContent = `Download aggiornamento… ${p.percent}%`;
+        if (statusEl) statusEl.textContent = t('update-downloading', p.percent);
         break;
       case 'downloaded':
         updateDownloaded = true;
-        if (statusEl) statusEl.textContent = `Aggiornamento v${p.version} pronto da installare.`;
+        if (statusEl) statusEl.textContent = t('update-downloaded-label', p.version);
         if (installBtn) installBtn.style.display = '';
-        showNotification(`Aggiornamento v${p.version} scaricato. Riavvia per installare.`);
-        if (confirm(`È pronto l'aggiornamento v${p.version}. Riavviare e installare ora?`)) {
+        showNotification(t('update-notif-downloaded', p.version));
+        if (confirm(t('update-downloaded-prompt', p.version))) {
           window.electronAPI.installUpdate();
         }
         break;
       case 'error': {
         const raw = p.message || '';
         let friendly;
-        if (raw.includes('404'))        friendly = 'Nessuna release trovata su GitHub. Esegui npm run release per pubblicare la prima versione.';
-        else if (raw.includes('ENOENT') || raw.includes('latest.yml')) friendly = 'File di aggiornamento non trovato. Pubblica una release con npm run release.';
-        else if (raw.includes('ENOTFOUND') || raw.includes('ECONNREFUSED')) friendly = 'Nessuna connessione a internet.';
-        else friendly = 'Errore controllo aggiornamenti.';
+        if (raw.includes('404'))        friendly = t('update-error-404');
+        else if (raw.includes('ENOENT') || raw.includes('latest.yml')) friendly = t('update-error-enoent');
+        else if (raw.includes('ENOTFOUND') || raw.includes('ECONNREFUSED')) friendly = t('update-error-network');
+        else friendly = t('update-error-generic');
         if (statusEl) statusEl.textContent = friendly;
         break;
       }
@@ -1595,14 +2109,14 @@ async function initVirtualMic() {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const found = devices.some(d => VBCABLE_REGEX.test(d.label));
     if (found) {
-      if (statusEl) statusEl.textContent = '✓ Microfono virtuale (VB-Cable) già installato.';
+      if (statusEl) statusEl.textContent = t('vm-found');
       if (installBtn) installBtn.style.display = 'none';
     } else {
-      if (statusEl) statusEl.textContent = 'Nessun microfono virtuale rilevato. Installa VB-Cable per usare la tua voce filtrata in Discord, Teams, ecc.';
+      if (statusEl) statusEl.textContent = t('vm-not-found');
       if (installBtn) installBtn.style.display = '';
     }
   } catch {
-    if (statusEl) statusEl.textContent = 'Impossibile rilevare i dispositivi audio.';
+    if (statusEl) statusEl.textContent = t('vm-detect-error');
   }
 
   // Wire install button
@@ -1619,27 +2133,27 @@ async function initVirtualMic() {
 
     switch (p.state) {
       case 'downloading':
-        if (statusEl)   statusEl.textContent = 'Download VB-Cable in corso…';
+        if (statusEl)   statusEl.textContent = t('vm-downloading');
         if (progressEl) progressEl.style.display = '';
         if (fillEl)     fillEl.style.width = `${p.percent}%`;
         if (labelEl)    labelEl.textContent = `${p.percent}%`;
         break;
       case 'extracting':
         if (fillEl)  fillEl.style.width = '100%';
-        if (labelEl) labelEl.textContent = 'Estrazione…';
+        if (labelEl) labelEl.textContent = t('vm-extracting');
         break;
       case 'installing':
-        if (labelEl) labelEl.textContent = 'Installazione (conferma la richiesta admin)…';
+        if (labelEl) labelEl.textContent = t('vm-installing');
         break;
       case 'done':
         if (progressEl) progressEl.style.display = 'none';
-        if (statusEl)   statusEl.textContent = '✓ VB-Cable installato! Riavvia la soundboard per vederlo nei dispositivi.';
+        if (statusEl)   statusEl.textContent = t('vm-done-status');
         if (installBtn) installBtn.style.display = 'none';
-        showNotification('VB-Cable installato con successo! Riavvia la soundboard per usarlo.');
+        showNotification(t('notif-vbcable-installed'));
         break;
       case 'error':
         if (progressEl) progressEl.style.display = 'none';
-        if (statusEl)   statusEl.textContent = 'Errore: ' + (p.message || 'installazione fallita');
+        if (statusEl)   statusEl.textContent = t('vm-error-status', p.message || 'installazione fallita');
         if (installBtn) { installBtn.disabled = false; installBtn.style.display = ''; }
         break;
     }
@@ -1796,7 +2310,7 @@ function renderMicPresets() {
     btn.setAttribute('data-preset', p.id);
     btn.innerHTML = `
       <span class="fx-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p.icon}</svg></span>
-      <span class="fx-name">${p.name}</span>`;
+      <span class="fx-name">${escapeHtml(t(p.nameKey))}</span>`;
     btn.addEventListener('click', () => {
       settings.micEffect.type = p.id;
       syncMicPresetSelection();
@@ -1828,14 +2342,20 @@ function makeDistortionCurve(amount) {
 // Acquire the mic, build the effect chain, route to the soundboard output (VB-Cable)
 // and optionally to the monitor device (self-monitor of your filtered voice).
 async function startMicEffect() {
+  const gen = ++_micEffectGen;
   await stopMicEffect();
   if (!settings.micEffect.enabled) return;
+  if (gen !== _micEffectGen) return;
   try {
     const audioConstraints = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
     if (settings.microphoneDeviceId && settings.microphoneDeviceId !== 'default') {
       audioConstraints.deviceId = { exact: settings.microphoneDeviceId };
     }
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+
+    // If superseded by a newer call, discard this stream and bail
+    if (gen !== _micEffectGen) { stream.getTracks().forEach(t => t.stop()); return; }
+    micStream = stream;
 
     // ---- Cable path: processed mic → soundboard output (VB-Cable), heard by other apps ----
     micContext = new AudioContext({ latencyHint: 'interactive' });
@@ -1854,8 +2374,9 @@ async function startMicEffect() {
       await startMicMonitor();
     }
   } catch (err) {
+    if (gen !== _micEffectGen) return;
     console.error('Errore avvio effetti microfono:', err);
-    showNotification('Impossibile avviare gli effetti microfono: ' + (err?.message || err));
+    showNotification(t('notif-mic-error', err?.message || err));
     settings.micEffect.enabled = false;
     const cb = document.getElementById('enable-mic-effect');
     if (cb) cb.checked = false;
@@ -1866,7 +2387,9 @@ async function startMicEffect() {
 
 // Spin up (or tear down) the self-monitor context using the already-acquired micStream
 async function startMicMonitor() {
-  stopMicMonitor();
+  const gen = ++_micMonitorGen;
+  await stopMicMonitor();
+  if (gen !== _micMonitorGen) return;
   if (!micStream) return;
   try {
     micMonitorContext = new AudioContext({ latencyHint: 'interactive' });
@@ -1889,28 +2412,36 @@ async function startMicMonitor() {
   }
 }
 
-function stopMicMonitor() {
+async function stopMicMonitor() {
   micMonitorTeardownFns.forEach(fn => { try { fn(); } catch (e) {} });
   micMonitorTeardownFns = [];
   if (micMonitorSource) { try { micMonitorSource.disconnect(); } catch (e) {} micMonitorSource = null; }
-  if (micMonitorContext) { try { micMonitorContext.close(); } catch (e) {} micMonitorContext = null; }
+  const ctx = micMonitorContext;
+  micMonitorContext = null;
+  if (ctx) { try { await ctx.close(); } catch (e) {} }
 }
 
 async function stopMicEffect() {
-  stopMicMonitor();
+  await stopMicMonitor();
   micTeardownFns.forEach(fn => { try { fn(); } catch (e) {} });
   micTeardownFns = [];
   if (micSourceNode) { try { micSourceNode.disconnect(); } catch (e) {} micSourceNode = null; }
   if (micAnalyser) { try { micAnalyser.disconnect(); } catch (e) {} micAnalyser = null; }
-  if (micContext) { try { await micContext.close(); } catch (e) {} micContext = null; }
+  const ctx = micContext;
+  micContext = null;
+  if (ctx) { try { await ctx.close(); } catch (e) {} }
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
 }
 
 // Rebuild the effect graphs in the existing contexts without re-acquiring the stream
 // (used when the preset or intensity changes).
-function rebuildMicGraphs() {
+async function rebuildMicGraphs() {
   if (settings.micEffect.enabled && micContext) buildMicChain();
-  if (settings.micEffect.enabled && micMonitorContext) startMicMonitor();
+  if (settings.micEffect.enabled && micMonitorContext) await startMicMonitor();
+}
+function rebuildMicGraphsDebounced() {
+  clearTimeout(_rebuildMicTimer);
+  _rebuildMicTimer = setTimeout(() => rebuildMicGraphs(), 150);
 }
 
 // (Re)build the cable-path effect node graph for the current preset + intensity.

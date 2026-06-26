@@ -21,6 +21,30 @@
     <span class="grid-lines"></span>
   </div>
 
+  <!-- Language picker — shown on first launch until a language is chosen -->
+  <div class="lang-picker-overlay" id="lang-picker-overlay">
+    <div class="lang-picker-card glass-strong">
+      <div class="lang-picker-title">
+        <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Choose your language
+      </div>
+      <div class="lang-choices">
+        <button class="lang-choice-btn" data-lang="it">
+          <svg class="lang-flag" viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" aria-label="Italian flag"><rect width="15" height="30" fill="#009246"/><rect x="15" width="15" height="30" fill="#ffffff"/><rect x="30" width="15" height="30" fill="#CE2B37"/></svg>
+          <span class="lang-label">Italiano</span>
+        </button>
+        <button class="lang-choice-btn" data-lang="en">
+          <svg class="lang-flag" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg" aria-label="UK flag"><rect width="60" height="30" fill="#012169"/><path d="M0,0 L60,30 M0,30 L60,0" stroke="#fff" stroke-width="8"/><path d="M0,0 L60,30" stroke="#C8102E" stroke-width="5.5" transform="translate(0,-1.5)"/><path d="M0,30 L60,0" stroke="#C8102E" stroke-width="5.5" transform="translate(0,1.5)"/><rect x="25" y="0" width="10" height="30" fill="#fff"/><rect x="0" y="10" width="60" height="10" fill="#fff"/><rect x="27" y="0" width="6" height="30" fill="#C8102E"/><rect x="0" y="12" width="60" height="6" fill="#C8102E"/></svg>
+          <span class="lang-label">English</span>
+        </button>
+        <button class="lang-choice-btn" data-lang="es">
+          <svg class="lang-flag" viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" aria-label="Spanish flag"><rect width="45" height="30" fill="#AA151B"/><rect y="7.5" width="45" height="15" fill="#F1BF00"/></svg>
+          <span class="lang-label">Español</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Header -->
@@ -31,7 +55,7 @@
         </span>
         <div class="brand-text">
           <div class="brand-name"><span class="aurora-text">Sound</span>board</div>
-          <div class="brand-sub">Studio · Live</div>
+          <div class="brand-sub" id="brand-sub-text">Studio · Live</div>
         </div>
       </div>
 
@@ -93,7 +117,7 @@
         <div class="cats-wrap">
           <div class="cats-label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
-            <span>Categorie</span>
+            <span id="sidebar-cats-label">Categorie</span>
             <button id="btn-add-category" class="cat-add-trigger" title="Nuova categoria" aria-label="Nuova categoria">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
             </button>
@@ -106,14 +130,14 @@
 
         <button id="btn-add-sound" class="add-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
-          Nuovo suono
+          <span id="btn-add-sound-text">Nuovo suono</span>
         </button>
       </aside>
 
       <main class="main">
         <div class="main-head">
           <div>
-            <div class="eyebrow">Categoria attiva</div>
+            <div class="eyebrow" id="eyebrow-cat">Categoria attiva</div>
             <h1 id="current-category-title" class="aurora-text">Tutti i suoni</h1>
           </div>
           <div class="count" id="sounds-count">0 suoni</div>
@@ -126,11 +150,11 @@
             <span class="empty-art" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
             </span>
-            <p class="empty-title">Ancora nessun suono</p>
-            <p class="empty-sub">Aggiungi il tuo primo suono per riempire la board.</p>
+            <p class="empty-title" id="empty-title">Ancora nessun suono</p>
+            <p class="empty-sub" id="empty-sub">Aggiungi il tuo primo suono per riempire la board.</p>
             <button id="btn-empty-add" class="add-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
-              Aggiungi un suono
+              <span id="btn-empty-add-text">Aggiungi un suono</span>
             </button>
           </div>
         </div>
@@ -139,7 +163,7 @@
         <div class="nowbar">
           <button id="btn-stop-all" class="transport-stop" title="Ferma tutto">
             <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"></rect></svg>
-            <span>Ferma tutto</span>
+            <span id="btn-stop-all-label">Ferma tutto</span>
           </button>
 
           <div class="viz-wrap">
@@ -148,7 +172,7 @@
 
           <div class="live-pill">
             <span class="live-ping"><span></span><span></span></span>
-            <span class="live-text">In ascolto</span>
+            <span class="live-text" id="live-text">In ascolto</span>
           </div>
         </div>
       </main>
@@ -169,17 +193,17 @@
         <input type="hidden" id="sound-id">
 
         <div class="field">
-          <label for="sound-title">Nome del suono</label>
+          <label for="sound-title" id="label-sound-title">Nome del suono</label>
           <input type="text" id="sound-title" required placeholder="Es. Applausi, Tamburo, Risata">
         </div>
 
         <div class="field">
-          <label>File audio o video</label>
+          <label id="label-file-upload">File audio o video</label>
           <div class="dropzone" id="file-drop-zone">
             <span class="dropzone-ico" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="m7 9 5-5 5 5"></path><path d="M5 20h14"></path></svg>
             </span>
-            <p>Trascina il file qui o <a href="#" id="link-browse-file">sfoglia</a></p>
+            <p><span id="dropzone-hint-text">Trascina il file qui o</span> <a href="#" id="link-browse-file">sfoglia</a></p>
             <span class="dropzone-file" id="file-name-preview">Nessun file selezionato</span>
           </div>
           <input type="hidden" id="sound-file-path">
@@ -187,12 +211,12 @@
 
         <div class="grid-2">
           <div class="field">
-            <label for="sound-category">Categoria</label>
+            <label for="sound-category" id="label-sound-category">Categoria</label>
             <select id="sound-category"></select>
           </div>
 
           <div class="field">
-            <label for="sound-color">Colore</label>
+            <label for="sound-color" id="label-sound-color">Colore</label>
             <select id="sound-color">
               <option value="purple">Viola</option>
               <option value="cyan">Ciano</option>
@@ -205,7 +229,7 @@
 
         <div class="grid-2">
           <div class="field">
-            <label for="sound-volume">Volume</label>
+            <label for="sound-volume" id="label-sound-volume">Volume</label>
             <div class="range-row">
               <input type="range" id="sound-volume" min="0" max="100" value="80">
               <span class="range-val" id="sound-volume-val">80%</span>
@@ -213,7 +237,7 @@
           </div>
 
           <div class="field">
-            <label>Scorciatoia globale</label>
+            <label id="label-hotkey-field">Scorciatoia globale</label>
             <div class="hotkey-row">
               <button type="button" id="btn-record-hotkey" class="btn-soft">Registra</button>
               <span id="hotkey-display" class="hotkey-chip">Nessuna</span>
@@ -237,7 +261,7 @@
   <div class="modal-overlay" id="settings-modal">
     <div class="sheet sheet-wide">
       <div class="sheet-head">
-        <h2>Routing audio</h2>
+        <h2 id="settings-modal-title">Routing audio</h2>
         <button class="sheet-close" id="btn-close-settings-modal" aria-label="Chiudi">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
         </button>
@@ -247,7 +271,7 @@
         <div class="routing-form">
 
           <div class="field" id="field-virtual-mic">
-            <label>Microfono virtuale</label>
+            <label id="label-virtual-mic-field">Microfono virtuale</label>
             <p class="route-hint vm-status" id="vm-status">Ricerca in corso…</p>
             <div class="vm-progress" id="vm-progress" style="display:none">
               <div class="vm-track"><div class="vm-fill" id="vm-fill"></div></div>
@@ -259,31 +283,31 @@
           </div>
 
           <div class="field">
-            <label for="select-input-device">Microfono da usare nelle app</label>
+            <label for="select-input-device" id="label-input-device-field">Microfono da usare nelle app</label>
             <select id="select-input-device">
               <option value="default">Microfono predefinito</option>
             </select>
           </div>
 
           <div class="field">
-            <label for="select-playback-device">Output soundboard</label>
+            <label for="select-playback-device" id="label-playback-device-field">Output soundboard</label>
             <select id="select-playback-device">
-              <option value="default">Periferica di riproduzione predefinita</option>
+              <option value="default">Dispositivo di Riproduzione Predefinito</option>
             </select>
           </div>
 
           <div class="field">
             <div class="check">
               <input type="checkbox" id="enable-monitor-device" checked>
-              <label for="enable-monitor-device">Monitor nelle cuffie</label>
+              <label for="enable-monitor-device" id="label-monitor-device-field">Monitor nelle cuffie</label>
             </div>
             <select id="select-monitor-device">
-              <option value="default">Periferica di monitoraggio predefinita</option>
+              <option value="default">Dispositivo di Monitoraggio Predefinito</option>
             </select>
           </div>
 
           <div class="field">
-            <label for="slider-amplifier">Amplificatore (gain)</label>
+            <label for="slider-amplifier" id="label-amplifier-field">Amplificatore (gain)</label>
             <div class="range-row">
               <input type="range" id="slider-amplifier" min="50" max="1000" value="100" step="10">
               <span class="range-val wide accent" id="val-amplifier">1.0x (0 dB)</span>
@@ -292,14 +316,14 @@
 
           <div class="grid-2">
             <div class="field">
-              <label for="slider-playback-vol">Volume soundboard</label>
+              <label for="slider-playback-vol" id="label-playback-vol-field">Volume soundboard</label>
               <div class="range-row">
                 <input type="range" id="slider-playback-vol" min="0" max="100" value="100">
                 <span class="range-val" id="val-playback-vol">100%</span>
               </div>
             </div>
             <div class="field">
-              <label for="slider-monitor-vol">Volume monitor</label>
+              <label for="slider-monitor-vol" id="label-monitor-vol-field">Volume monitor</label>
               <div class="range-row">
                 <input type="range" id="slider-monitor-vol" min="0" max="100" value="70">
                 <span class="range-val" id="val-monitor-vol">70%</span>
@@ -308,7 +332,7 @@
           </div>
 
           <div class="field">
-            <label for="slider-fade-duration">Fade in / out</label>
+            <label for="slider-fade-duration" id="label-fade-field">Fade in / out</label>
             <div class="range-row">
               <input type="range" id="slider-fade-duration" min="0" max="2000" value="100" step="50">
               <span class="range-val" id="val-fade-duration">100 ms</span>
@@ -316,7 +340,7 @@
           </div>
 
           <div class="field">
-            <label>Aggiornamenti</label>
+            <label id="label-updates-field">Aggiornamenti</label>
             <div class="range-row">
               <button class="btn-soft" id="btn-check-updates" type="button">Controlla aggiornamenti</button>
               <span class="range-val wide" id="update-version">v—</span>
@@ -324,20 +348,30 @@
             <p class="route-hint" id="update-status-text">Versione attuale</p>
             <button class="btn-aurora" id="btn-install-update" type="button" style="display:none; margin-top:8px;">Riavvia e installa</button>
           </div>
+
+          <!-- Language selector -->
+          <div class="field">
+            <label id="label-language-field">Lingua</label>
+            <div class="lang-row">
+              <button type="button" class="lang-btn" data-lang="it" title="Italiano"><svg class="flag-sm" viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="15" height="30" fill="#009246"/><rect x="15" width="15" height="30" fill="#fff"/><rect x="30" width="15" height="30" fill="#CE2B37"/></svg>IT</button>
+              <button type="button" class="lang-btn" data-lang="en" title="English"><svg class="flag-sm" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="30" fill="#012169"/><path d="M0,0 L60,30 M0,30 L60,0" stroke="#fff" stroke-width="8"/><path d="M0,0 L60,30" stroke="#C8102E" stroke-width="5.5" transform="translate(0,-1.5)"/><path d="M0,30 L60,0" stroke="#C8102E" stroke-width="5.5" transform="translate(0,1.5)"/><rect x="25" y="0" width="10" height="30" fill="#fff"/><rect x="0" y="10" width="60" height="10" fill="#fff"/><rect x="27" y="0" width="6" height="30" fill="#C8102E"/><rect x="0" y="12" width="60" height="6" fill="#C8102E"/></svg>EN</button>
+              <button type="button" class="lang-btn" data-lang="es" title="Español"><svg class="flag-sm" viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="45" height="30" fill="#AA151B"/><rect y="7.5" width="45" height="15" fill="#F1BF00"/></svg>ES</button>
+            </div>
+          </div>
         </div>
 
         <aside class="routing-status glass-strong">
-          <h3>Stato routing</h3>
+          <h3 id="route-status-title">Stato routing</h3>
           <div class="route">
-            <span class="route-k">Soundboard</span>
+            <span class="route-k" id="route-soundboard-label">Soundboard</span>
             <strong class="route-v" id="route-playback-name">Default</strong>
           </div>
           <div class="route">
-            <span class="route-k">Input app</span>
+            <span class="route-k" id="route-input-label">Input app</span>
             <strong class="route-v" id="route-microphone-name">Microfono predefinito</strong>
           </div>
           <div class="route">
-            <span class="route-k">Monitor</span>
+            <span class="route-k" id="route-monitor-label">Monitor</span>
             <strong class="route-v" id="route-monitor-name">Non attivo</strong>
           </div>
           <p class="route-hint" id="route-hint">
@@ -357,7 +391,7 @@
     <div class="sheet sheet-wide">
       <div class="sheet-head">
         <div class="mic-fx-header-left">
-          <h2>Effetti microfono</h2>
+          <h2 id="mic-fx-modal-title">Effetti microfono</h2>
           <label class="switch" title="Attiva effetti microfono">
             <input type="checkbox" id="enable-mic-effect">
             <span class="switch-track"><span class="switch-thumb"></span></span>
@@ -373,14 +407,14 @@
 
         <div class="grid-2 mic-fx-controls">
           <div class="field">
-            <label for="slider-mic-intensity">Intensità effetto</label>
+            <label for="slider-mic-intensity" id="label-mic-intensity-field">Intensità effetto</label>
             <div class="range-row">
               <input type="range" id="slider-mic-intensity" min="0" max="100" value="50">
               <span class="range-val" id="val-mic-intensity">50%</span>
             </div>
           </div>
           <div class="field">
-            <label>Livello microfono</label>
+            <label id="label-mic-level-field">Livello microfono</label>
             <div class="mic-meter" id="mic-meter">
               <canvas id="mic-meter-canvas"></canvas>
             </div>
@@ -390,11 +424,11 @@
         <div class="field">
           <div class="check">
             <input type="checkbox" id="enable-mic-self-monitor">
-            <label for="enable-mic-self-monitor">Ascolta la tua voce filtrata nelle cuffie (monitor)</label>
+            <label for="enable-mic-self-monitor" id="label-self-monitor-field">Ascolta la tua voce filtrata nelle cuffie (monitor)</label>
           </div>
         </div>
 
-        <p class="route-hint mic-fx-hint">
+        <p class="route-hint mic-fx-hint" id="mic-fx-hint-el">
           Per usare la voce con effetti nelle altre app, seleziona <strong>VB-Cable</strong> (lo stesso output della soundboard) come microfono.
           Il monitoraggio usa la periferica scelta in <strong>Routing audio &rarr; Monitor nelle cuffie</strong>.
         </p>
