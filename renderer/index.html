@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soundboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Aurora background -->
+  <div class="aurora-bg" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+    <span class="blob blob-4"></span>
+    <svg class="grain"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#noise)"/></svg>
+    <span class="grid-lines"></span>
+  </div>
+
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 12h2.2l2-7 3.4 16 3-12 1.8 6H21"/></svg>
+        </span>
+        <div class="brand-text">
+          <div class="brand-name"><span class="aurora-text">Sound</span>board</div>
+          <div class="brand-sub">Studio · Live</div>
+        </div>
+      </div>
+
+      <span class="h-divider"></span>
+
+      <div class="dev-chips">
+        <div class="dev-chip">
+          <span class="dev-ico" style="--ico: var(--aurora-magenta)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"></path></svg>
+          </span>
+          <div class="dev-meta">
+            <span class="dev-label">Input</span>
+            <span class="dev-val" id="status-microphone-device">Predefinito</span>
+          </div>
+        </div>
+        <div class="dev-chip">
+          <span class="dev-ico" style="--ico: var(--aurora-violet)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"></path></svg>
+          </span>
+          <div class="dev-meta">
+            <span class="dev-label">Output</span>
+            <span class="dev-val" id="status-playback-device">Default</span>
+          </div>
+        </div>
+        <div class="dev-chip">
+          <span class="dev-ico" style="--ico: var(--aurora-cyan)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M3 16a2 2 0 0 1 2-2h1v6H5a2 2 0 0 1-2-2zM21 16a2 2 0 0 0-2-2h-1v6h1a2 2 0 0 0 2-2z"></path></svg>
+          </span>
+          <div class="dev-meta">
+            <span class="dev-label">Monitor</span>
+            <span class="dev-val" id="status-monitor-device">Non attivo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="gain-chip">
+          <span class="dev-label">Gain</span>
+          <span class="dev-val accent" id="status-amplifier">1.0x</span>
+        </div>
+        <button id="btn-open-mic-fx" class="icon-btn" aria-label="Effetti microfono" title="Effetti microfono">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"></path></svg>
+        </button>
+        <button id="btn-open-settings" class="icon-btn" aria-label="Routing audio" title="Routing audio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="body">
+
+      <aside class="sidebar">
+        <div class="search">
+          <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <input type="search" id="search-input" placeholder="Cerca suono…">
+        </div>
+
+        <div class="cats-wrap">
+          <div class="cats-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+            <span>Categorie</span>
+            <button id="btn-add-category" class="cat-add-trigger" title="Nuova categoria" aria-label="Nuova categoria">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+          </div>
+
+          <nav>
+            <ul id="category-list" class="cats"></ul>
+          </nav>
+        </div>
+
+        <button id="btn-add-sound" class="add-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          Nuovo suono
+        </button>
+      </aside>
+
+      <main class="main">
+        <div class="main-head">
+          <div>
+            <div class="eyebrow">Categoria attiva</div>
+            <h1 id="current-category-title" class="aurora-text">Tutti i suoni</h1>
+          </div>
+          <div class="count" id="sounds-count">0 suoni</div>
+        </div>
+
+        <div class="grid-scroll">
+          <div class="pad-grid" id="sound-grid"></div>
+
+          <div class="empty" id="empty-state">
+            <span class="empty-art" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            </span>
+            <p class="empty-title">Ancora nessun suono</p>
+            <p class="empty-sub">Aggiungi il tuo primo suono per riempire la board.</p>
+            <button id="btn-empty-add" class="add-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+              Aggiungi un suono
+            </button>
+          </div>
+        </div>
+
+        <!-- Now playing bar -->
+        <div class="nowbar">
+          <button id="btn-stop-all" class="transport-stop" title="Ferma tutto">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"></rect></svg>
+            <span>Ferma tutto</span>
+          </button>
+
+          <div class="viz-wrap">
+            <canvas id="visualizer-canvas"></canvas>
+          </div>
+
+          <div class="live-pill">
+            <span class="live-ping"><span></span><span></span></span>
+            <span class="live-text">In ascolto</span>
+          </div>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Add / edit sound -->
+  <div class="modal-overlay" id="sound-modal">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 id="sound-modal-title">Nuovo suono</h2>
+        <button class="sheet-close" id="btn-close-sound-modal" aria-label="Chiudi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <form id="sound-form">
+        <input type="hidden" id="sound-id">
+
+        <div class="field">
+          <label for="sound-title">Nome del suono</label>
+          <input type="text" id="sound-title" required placeholder="Es. Applausi, Tamburo, Risata">
+        </div>
+
+        <div class="field">
+          <label>File audio o video</label>
+          <div class="dropzone" id="file-drop-zone">
+            <span class="dropzone-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"></path><path d="m7 9 5-5 5 5"></path><path d="M5 20h14"></path></svg>
+            </span>
+            <p>Trascina il file qui o <a href="#" id="link-browse-file">sfoglia</a></p>
+            <span class="dropzone-file" id="file-name-preview">Nessun file selezionato</span>
+          </div>
+          <input type="hidden" id="sound-file-path">
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="sound-category">Categoria</label>
+            <select id="sound-category"></select>
+          </div>
+
+          <div class="field">
+            <label for="sound-color">Colore</label>
+            <select id="sound-color">
+              <option value="purple">Viola</option>
+              <option value="cyan">Ciano</option>
+              <option value="magenta">Magenta</option>
+              <option value="green">Menta</option>
+              <option value="yellow">Oro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="sound-volume">Volume</label>
+            <div class="range-row">
+              <input type="range" id="sound-volume" min="0" max="100" value="80">
+              <span class="range-val" id="sound-volume-val">80%</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Scorciatoia globale</label>
+            <div class="hotkey-row">
+              <button type="button" id="btn-record-hotkey" class="btn-soft">Registra</button>
+              <span id="hotkey-display" class="hotkey-chip">Nessuna</span>
+              <button type="button" id="btn-clear-hotkey" class="icon-x" title="Rimuovi scorciatoia" aria-label="Rimuovi scorciatoia">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+              </button>
+              <input type="hidden" id="sound-hotkey" value="">
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet-actions">
+          <button type="button" class="btn-soft" id="btn-cancel-sound-modal">Annulla</button>
+          <button type="submit" class="btn-aurora" id="btn-submit-sound-modal">Salva suono</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Audio routing -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="sheet sheet-wide">
+      <div class="sheet-head">
+        <h2>Routing audio</h2>
+        <button class="sheet-close" id="btn-close-settings-modal" aria-label="Chiudi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="routing">
+        <div class="routing-form">
+
+          <div class="field">
+            <label for="select-input-device">Microfono da usare nelle app</label>
+            <select id="select-input-device">
+              <option value="default">Microfono predefinito</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="select-playback-device">Output soundboard</label>
+            <select id="select-playback-device">
+              <option value="default">Periferica di riproduzione predefinita</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="check">
+              <input type="checkbox" id="enable-monitor-device" checked>
+              <label for="enable-monitor-device">Monitor nelle cuffie</label>
+            </div>
+            <select id="select-monitor-device">
+              <option value="default">Periferica di monitoraggio predefinita</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="slider-amplifier">Amplificatore (gain)</label>
+            <div class="range-row">
+              <input type="range" id="slider-amplifier" min="50" max="1000" value="100" step="10">
+              <span class="range-val wide accent" id="val-amplifier">1.0x (0 dB)</span>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="slider-playback-vol">Volume soundboard</label>
+              <div class="range-row">
+                <input type="range" id="slider-playback-vol" min="0" max="100" value="100">
+                <span class="range-val" id="val-playback-vol">100%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="slider-monitor-vol">Volume monitor</label>
+              <div class="range-row">
+                <input type="range" id="slider-monitor-vol" min="0" max="100" value="70">
+                <span class="range-val" id="val-monitor-vol">70%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="slider-fade-duration">Fade in / out</label>
+            <div class="range-row">
+              <input type="range" id="slider-fade-duration" min="0" max="2000" value="100" step="50">
+              <span class="range-val" id="val-fade-duration">100 ms</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Aggiornamenti</label>
+            <div class="range-row">
+              <button class="btn-soft" id="btn-check-updates" type="button">Controlla aggiornamenti</button>
+              <span class="range-val wide" id="update-version">v—</span>
+            </div>
+            <p class="route-hint" id="update-status-text">Versione attuale</p>
+            <button class="btn-aurora" id="btn-install-update" type="button" style="display:none; margin-top:8px;">Riavvia e installa</button>
+          </div>
+        </div>
+
+        <aside class="routing-status glass-strong">
+          <h3>Stato routing</h3>
+          <div class="route">
+            <span class="route-k">Soundboard</span>
+            <strong class="route-v" id="route-playback-name">Default</strong>
+          </div>
+          <div class="route">
+            <span class="route-k">Input app</span>
+            <strong class="route-v" id="route-microphone-name">Microfono predefinito</strong>
+          </div>
+          <div class="route">
+            <span class="route-k">Monitor</span>
+            <strong class="route-v" id="route-monitor-name">Non attivo</strong>
+          </div>
+          <p class="route-hint" id="route-hint">
+            Scegli un microfono virtuale: se trovo l'output gemello lo imposto come destinazione della soundboard.
+          </p>
+        </aside>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn-aurora" id="btn-save-settings">Salva impostazioni</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mic Effects panel -->
+  <div class="modal-overlay" id="mic-fx-modal">
+    <div class="sheet sheet-wide">
+      <div class="sheet-head">
+        <div class="mic-fx-header-left">
+          <h2>Effetti microfono</h2>
+          <label class="switch" title="Attiva effetti microfono">
+            <input type="checkbox" id="enable-mic-effect">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+          </label>
+        </div>
+        <button class="sheet-close" id="btn-close-mic-fx-modal" aria-label="Chiudi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="mic-fx-body" id="mic-fx-body">
+        <div class="fx-presets" id="fx-presets"></div>
+
+        <div class="grid-2 mic-fx-controls">
+          <div class="field">
+            <label for="slider-mic-intensity">Intensità effetto</label>
+            <div class="range-row">
+              <input type="range" id="slider-mic-intensity" min="0" max="100" value="50">
+              <span class="range-val" id="val-mic-intensity">50%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Livello microfono</label>
+            <div class="mic-meter" id="mic-meter">
+              <canvas id="mic-meter-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="check">
+            <input type="checkbox" id="enable-mic-self-monitor">
+            <label for="enable-mic-self-monitor">Ascolta la tua voce filtrata nelle cuffie (monitor)</label>
+          </div>
+        </div>
+
+        <p class="route-hint mic-fx-hint">
+          Per usare la voce con effetti nelle altre app, seleziona <strong>VB-Cable</strong> (lo stesso output della soundboard) come microfono.
+          Il monitoraggio usa la periferica scelta in <strong>Routing audio &rarr; Monitor nelle cuffie</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-host" id="toast-host"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
