@@ -159,6 +159,10 @@ const STRINGS = {
     'vm-detect-error': 'Impossibile rilevare i dispositivi audio.',
     // Language picker
     'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    // Mic setup (first launch)
+    'mic-setup-title': 'Configura il microfono',
+    'mic-setup-sub': 'Scegli quali dispositivi usare. Potrai cambiarli in qualsiasi momento dalle impostazioni.',
+    'btn-mic-setup-start': 'Inizia',
     // Default cat names
     'cat-music': 'Musica', 'cat-effects': 'Effetti',
     // Mic FX hint (HTML allowed)
@@ -275,6 +279,9 @@ const STRINGS = {
     'vm-error-status': (msg) => `Error: ${msg}`,
     'vm-detect-error': 'Unable to detect audio devices.',
     'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    'mic-setup-title': 'Set up your microphone',
+    'mic-setup-sub': 'Pick which devices to use. You can change these anytime in settings.',
+    'btn-mic-setup-start': 'Get started',
     'cat-music': 'Music', 'cat-effects': 'Effects',
     'mic-fx-hint': 'To use your effected voice in other apps, select <strong>VB-Cable</strong> (the same output as the soundboard) as your microphone. Monitoring uses the device selected in <strong>Audio Routing &rarr; Monitor in headphones</strong>.',
   },
@@ -389,6 +396,9 @@ const STRINGS = {
     'vm-error-status': (msg) => `Error: ${msg}`,
     'vm-detect-error': 'No se pueden detectar los dispositivos de audio.',
     'lang-pick-title': 'Scegli la lingua / Choose language / Elige idioma',
+    'mic-setup-title': 'Configura el micrófono',
+    'mic-setup-sub': 'Elige qué dispositivos usar. Podrás cambiarlos en cualquier momento en los ajustes.',
+    'btn-mic-setup-start': 'Empezar',
     'cat-music': 'Música', 'cat-effects': 'Efectos',
     'mic-fx-hint': 'Para usar tu voz con efectos en otras apps, selecciona <strong>VB-Cable</strong> (la misma salida que el tablero) como micrófono. El monitor usa el dispositivo seleccionado en <strong>Enrutamiento de audio &rarr; Monitor en auriculares</strong>.',
   }
@@ -486,6 +496,17 @@ function applyLanguage(lang) {
   defOptUpdate('select-playback-device', 'default-playback');
   defOptUpdate('select-monitor-device', 'default-monitor');
 
+  // First-launch mic setup overlay
+  set('mic-setup-title', 'mic-setup-title');
+  set('mic-setup-sub', 'mic-setup-sub');
+  set('setup-label-input-field', 'label-input-device');
+  set('setup-label-playback-field', 'label-playback-device');
+  set('setup-label-monitor-field', 'label-monitor-device');
+  set('btn-mic-setup-start', 'btn-mic-setup-start');
+  defOptUpdate('setup-input-device', 'default-mic');
+  defOptUpdate('setup-playback-device', 'default-playback');
+  defOptUpdate('setup-monitor-device', 'default-monitor');
+
   // Mic FX modal
   set('mic-fx-modal-title', 'mic-fx-title');
   set('label-mic-intensity-field', 'label-mic-intensity');
@@ -506,6 +527,10 @@ function applyLanguage(lang) {
   });
 }
 
+// True only during the very first run (no language chosen yet). Drives the
+// first-launch mic-setup step after audio devices have been enumerated.
+let isFirstLaunch = false;
+
 // Show the language picker overlay (first-launch)
 function showLanguagePicker() {
   return new Promise(resolve => {
@@ -523,6 +548,59 @@ function showLanguagePicker() {
         resolve();
       }, { once: true });
     });
+  });
+}
+
+// Show the first-launch microphone setup overlay. Must be called after
+// refreshAudioDevices() so the settings selects are already populated — we
+// clone their options into the setup selects, then mirror the chosen devices
+// back into the settings modal and persist them.
+function showMicSetup() {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('mic-setup-overlay');
+    if (!overlay) { resolve(); return; }
+
+    const inSel = document.getElementById('setup-input-device');
+    const playSel = document.getElementById('setup-playback-device');
+    const monSel = document.getElementById('setup-monitor-device');
+    const monCheck = document.getElementById('setup-enable-monitor');
+
+    // Mirror the (already-populated) settings-modal selects into the setup ones
+    const cloneOptions = (fromId, toSel, value) => {
+      const from = document.getElementById(fromId);
+      toSel.innerHTML = '';
+      Array.from(from.options).forEach(o => toSel.add(new Option(o.text, o.value)));
+      toSel.value = Array.from(toSel.options).some(o => o.value === value) ? value : 'default';
+    };
+    cloneOptions('select-input-device', inSel, settings.microphoneDeviceId || 'default');
+    cloneOptions('select-playback-device', playSel, settings.playbackDeviceId || 'default');
+    cloneOptions('select-monitor-device', monSel, settings.monitorDeviceId || 'default');
+
+    monCheck.checked = settings.monitorEnabled !== false;
+    monSel.disabled = !monCheck.checked;
+    monCheck.onchange = () => { monSel.disabled = !monCheck.checked; };
+
+    overlay.classList.add('open');
+
+    document.getElementById('btn-mic-setup-start').addEventListener('click', () => {
+      settings.microphoneDeviceId = inSel.value;
+      settings.playbackDeviceId = playSel.value;
+      settings.monitorEnabled = monCheck.checked;
+      settings.monitorDeviceId = monSel.value;
+
+      // Reflect the choices in the settings modal so they stay in sync
+      const sync = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+      sync('select-input-device', settings.microphoneDeviceId);
+      sync('select-playback-device', settings.playbackDeviceId);
+      sync('select-monitor-device', settings.monitorDeviceId);
+      const enMon = document.getElementById('enable-monitor-device');
+      if (enMon) enMon.checked = settings.monitorEnabled;
+
+      saveAppData();
+      updateStatusPanel();
+      overlay.classList.remove('open');
+      resolve();
+    }, { once: true });
   });
 }
 
@@ -585,6 +663,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Populate output audio devices lists
   await refreshAudioDevices();
+
+  // First launch: let the user pick their mic/output devices before the audio
+  // engine spins up, so the chosen sinkIds take effect immediately.
+  if (isFirstLaunch) {
+    await showMicSetup();
+  }
 
   // Initialize Audio Contexts
   initAudioEngine();
@@ -674,7 +758,9 @@ async function loadAppData() {
   if (settings.language && STRINGS[settings.language]) {
     currentLang = settings.language;
   } else {
-    // First launch: show language picker before continuing
+    // First launch: show language picker before continuing. The mic-setup step
+    // is shown later (in DOMContentLoaded) once audio devices are enumerated.
+    isFirstLaunch = true;
     await showLanguagePicker();
   }
   applyLanguage(currentLang);

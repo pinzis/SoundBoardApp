@@ -45,6 +45,43 @@
     </div>
   </div>
 
+  <!-- Microphone setup — shown on first launch after a language is chosen -->
+  <div class="lang-picker-overlay" id="mic-setup-overlay">
+    <div class="lang-picker-card glass-strong mic-setup-card">
+      <div class="lang-picker-title">
+        <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg>
+        <span id="mic-setup-title">Configura il microfono</span>
+      </div>
+      <p class="mic-setup-sub" id="mic-setup-sub">Scegli quali dispositivi usare. Potrai cambiarli in qualsiasi momento dalle impostazioni.</p>
+
+      <div class="field">
+        <label for="setup-input-device" id="setup-label-input-field">Microfono da usare nelle app</label>
+        <select id="setup-input-device">
+          <option value="default">Microfono predefinito</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="setup-playback-device" id="setup-label-playback-field">Output soundboard</label>
+        <select id="setup-playback-device">
+          <option value="default">Dispositivo di Riproduzione Predefinito</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <div class="check">
+          <input type="checkbox" id="setup-enable-monitor" checked>
+          <label for="setup-enable-monitor" id="setup-label-monitor-field">Monitor nelle cuffie</label>
+        </div>
+        <select id="setup-monitor-device">
+          <option value="default">Dispositivo di Monitoraggio Predefinito</option>
+        </select>
+      </div>
+
+      <button class="btn-aurora" id="btn-mic-setup-start" type="button">Inizia</button>
+    </div>
+  </div>
+
   <div class="app">
 
     <!-- Header -->

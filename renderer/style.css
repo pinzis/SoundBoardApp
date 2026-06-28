@@ -1527,6 +1527,37 @@ input[type="range"]::-webkit-slider-thumb {
   color: var(--muted-foreground);
 }
 
+/* ===== First-launch microphone setup ==================================== */
+
+.mic-setup-card {
+  max-width: 440px;
+  align-items: stretch;
+  gap: 1.1rem;
+  text-align: left;
+}
+
+.mic-setup-card .lang-picker-title {
+  justify-content: center;
+}
+
+.mic-setup-card .field {
+  margin-bottom: 0;
+}
+
+.mic-setup-sub {
+  margin: -0.5rem 0 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.mic-setup-card #btn-mic-setup-start {
+  margin-top: 0.5rem;
+  width: 100%;
+  justify-content: center;
+}
+
 /* ===== Language selector in settings ===================================== */
 
 .lang-row {
