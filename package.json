@@ -1,10 +1,11 @@
 {
   "name": "soundboard-app",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Soundboard desktop con routing audio e scorciatoie globali",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "icon": "electron scripts/render-icon.js",
     "build": "electron-builder --win --x64",
     "release": "electron-builder --win --x64 --publish always"
   },
@@ -24,6 +25,7 @@
     "productName": "Soundboard",
     "win": {
       "target": "nsis",
+      "icon": "build/icon.png",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {
@@ -43,7 +45,8 @@
     "files": [
       "main.js",
       "preload.js",
-      "renderer/**/*"
+      "renderer/**/*",
+      "build/icon.png"
     ]
   }
 }
