@@ -44,7 +44,7 @@ app.whenReady().then(async () => {
   }
   const png = image.toPNG();
 
-  const outDir = path.join(__dirname, '..', 'build');
+  const outDir = path.join(__dirname, '..', 'assets');
   fs.mkdirSync(outDir, { recursive: true });
   const out = path.join(outDir, 'icon.png');
   fs.writeFileSync(out, png);

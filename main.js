@@ -30,7 +30,7 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     title: "Soundboard",
-    icon: path.join(__dirname, 'build', 'icon.png'),
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     frame: true,
     backgroundColor: '#0b0c11',
     webPreferences: {

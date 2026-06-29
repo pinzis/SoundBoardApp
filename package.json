@@ -25,7 +25,7 @@
     "productName": "Soundboard",
     "win": {
       "target": "nsis",
-      "icon": "build/icon.png",
+      "icon": "assets/icon.png",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {
@@ -46,7 +46,7 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
-      "build/icon.png"
+      "assets/icon.png"
     ]
   }
 }
