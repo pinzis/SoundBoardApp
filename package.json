@@ -23,7 +23,8 @@
     "appId": "com.soundboard.app",
     "productName": "Soundboard",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -33,7 +34,8 @@
     "publish": {
       "provider": "github",
       "owner": "pinzis",
-      "repo": "SoundBoardApp"
+      "repo": "SoundBoardApp",
+      "releaseType": "release"
     },
     "directories": {
       "output": "dist"
