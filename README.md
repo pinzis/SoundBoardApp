@@ -8,7 +8,7 @@
 [![Total downloads](https://img.shields.io/github/downloads/pinzis/SoundBoardApp/total?style=for-the-badge&color=ec4899&labelColor=140f24&label=downloads)](https://github.com/pinzis/SoundBoardApp/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-22d3ee?style=for-the-badge&labelColor=140f24)](#-installation)
 [![Electron](https://img.shields.io/badge/Electron-31-34d399?style=for-the-badge&labelColor=140f24&logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![License](https://img.shields.io/badge/license-MIT-f4f1fb?style=for-the-badge&labelColor=140f24)](#-license)
+[![License](https://img.shields.io/badge/license-Proprietary-f4f1fb?style=for-the-badge&labelColor=140f24)](#-license)
 
 **A modern desktop soundboard with real-time microphone effects, full audio routing, and system-wide hotkeys.**
 
@@ -159,13 +159,18 @@ npm run release    # build + publish to GitHub Releases (needs GH_TOKEN)
 
 ## 📄 License
 
-Released under the **MIT License**.
+© 2026 **pinzis**. All rights reserved.
+
+Personal use only. Redistribution, modification, sublicensing, and commercial use are **strictly prohibited** without prior written permission from the author.
+See the [LICENSE](LICENSE) file for full terms.
+
+To request special permissions: **contact@pinzis.dev**
 
 <div align="center">
 
 <br/>
 
-**Made with 🎧 by [Inzi](https://github.com/pinzis)**
+**Made with 🎧 by [pinzis](https://github.com/pinzis)**
 
 <sub>If you find this useful, consider leaving a ⭐ on the repo!</sub>
 
